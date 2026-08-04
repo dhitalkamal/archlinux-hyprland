@@ -1,0 +1,12 @@
+#!/bin/sh
+# Toggle hyprsunset warm-screen (night light). Flag mirrors caffeine's pattern
+# so waybar / the control center can read the state.
+FLAG="$XDG_RUNTIME_DIR/nightlight.on"
+TEMP="${1:-4000}"
+if [ -f "$FLAG" ] || pgrep -x hyprsunset >/dev/null 2>&1; then
+    pkill -x hyprsunset 2>/dev/null
+    rm -f "$FLAG"
+else
+    hyprsunset -t "$TEMP" >/dev/null 2>&1 &
+    touch "$FLAG"
+fi

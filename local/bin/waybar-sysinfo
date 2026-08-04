@@ -1,0 +1,10 @@
+#!/bin/sh
+# temp / mem / cpu on one line, each right-padded to 3 digits so the module
+# width is CONSTANT (no flicker as values change) for a centred waybar layout.
+t=$(( $(cat /sys/class/thermal/thermal_zone6/temp 2>/dev/null || echo 0) / 1000 ))
+m=$(free | awk '/^Mem:/{printf "%.0f", $3/$2*100}')
+set -- $(grep '^cpu ' /proc/stat); i1=$5; T1=0; shift; for v; do T1=$((T1+v)); done
+sleep 0.2
+set -- $(grep '^cpu ' /proc/stat); i2=$5; T2=0; shift; for v; do T2=$((T2+v)); done
+dT=$((T2-T1)); dI=$((i2-i1)); c=0; [ "$dT" -gt 0 ] && c=$(( (100*(dT-dI))/dT ))
+printf '%3d°   %3d%%   %3d%%\n' "$t" "$m" "$c"

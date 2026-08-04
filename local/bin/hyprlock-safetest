@@ -1,0 +1,33 @@
+#!/bin/sh
+# Safe lock-screen test. Locks with hyprlock, but a DETACHED watchdog force-
+# unlocks the session after TIMEOUT seconds — so a crash/hang can never strand
+# you. Everything hyprlock prints is recorded to LOG for diagnosis.
+#
+# Usage: hyprlock-safetest [timeout_seconds]   (default 120)
+
+TIMEOUT="${1:-120}"
+LOG="${TMPDIR:-/tmp}/hyprlock-test.log"
+
+{
+    echo "=== hyprlock-safetest run $(date '+%H:%M:%S') — watchdog ${TIMEOUT}s ==="
+    hyprlock --version
+} > "$LOG" 2>&1
+
+# Detached watchdog: fires even if hyprlock crashes or the shell dies.
+setsid sh -c "sleep $TIMEOUT; echo '[watchdog] forcing unlock' >> '$LOG'; loginctl unlock-sessions; pkill -x hyprlock" >/dev/null 2>&1 &
+WD=$!
+
+# Run the lock (foreground), capturing all output.
+hyprlock >> "$LOG" 2>&1
+rc=$?
+echo "[exit] hyprlock returned rc=$rc" >> "$LOG"
+
+if [ "$rc" -eq 0 ]; then
+    # clean unlock — cancel the watchdog so it never fires
+    kill "$WD" 2>/dev/null
+    pkill -f "sleep $TIMEOUT" 2>/dev/null
+else
+    # crash/kill — recover immediately, but LEAVE the watchdog as a backstop
+    echo "[recover] nonzero exit, forcing unlock now" >> "$LOG"
+    loginctl unlock-sessions 2>/dev/null
+fi

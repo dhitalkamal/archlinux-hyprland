@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# waybar-updates — emit JSON for a Waybar "updates available" module.
+# Uses checkupdates (pacman-contrib): safe, no sudo, no system DB change.
+n=$(checkupdates 2>/dev/null | wc -l)
+if [ "${n:-0}" -gt 0 ]; then
+    printf '{"text":"󰚰 %s","tooltip":"%s update(s) available — click to upgrade","class":"pending"}\n' "$n" "$n"
+else
+    printf '{"text":""}\n'
+fi

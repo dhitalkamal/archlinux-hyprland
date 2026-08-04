@@ -1,0 +1,392 @@
+#!/usr/bin/env python3
+"""wall-theme — generate a desktop color theme from the current wallpaper.
+
+Pulls a palette from the wallpaper (a video frame via ffmpeg, or an image),
+derives a cohesive dark theme, writes color files for Hyprland / Waybar / wofi
+/ kitty / mako, and reloads each. Pure stdlib + ffmpeg.
+
+Usage:
+  wall-theme                 # re-theme from the current wallpaper
+  wall-theme /path/to/file   # switch wallpaper (img or video) THEN re-theme
+"""
+import os, sys, subprocess, colorsys, struct, glob
+
+HOME = os.path.expanduser("~")
+STATE = f"{HOME}/.config/hypr/current-wallpaper"
+VIDEO_EXT = (".mp4", ".mkv", ".webm", ".mov", ".avi", ".m4v")
+FRAME = "/tmp/wall-theme-frame.ppm"
+
+# ---------- color helpers ----------
+def clamp(v, lo=0.0, hi=1.0): return lo if v < lo else hi if v > hi else v
+def to255(x): return max(0, min(255, int(round(x * 255))))
+def rgb_hex(r, g, b): return "%02x%02x%02x" % (to255(r), to255(g), to255(b))
+def lum(r, g, b): return 0.2126 * r + 0.7152 * g + 0.0722 * b   # inputs 0..1
+
+def hls(h, l, s):
+    r, g, b = colorsys.hls_to_rgb(h, l, s)
+    return (r, g, b)
+
+def rgb_to_hls(r, g, b):
+    return colorsys.rgb_to_hls(r, g, b)  # -> (h, l, s)
+
+def hue_dist(a, b):
+    d = abs(a - b) % 1.0
+    return min(d, 1.0 - d)
+
+# ---------- read a downscaled frame as a list of (r,g,b) floats 0..1 ----------
+def grab_pixels(wall):
+    ext = os.path.splitext(wall)[1].lower()
+    cmd = ["ffmpeg", "-y", "-loglevel", "error"]
+    if ext in VIDEO_EXT:
+        cmd += ["-ss", "3"]           # seek a few seconds in for a representative frame
+    cmd += ["-i", wall, "-frames:v", "1", "-vf", "scale=200:-1", FRAME]
+    subprocess.run(cmd, check=True)
+    with open(FRAME, "rb") as f:
+        data = f.read()
+    # parse P6 PPM header: magic, width, height, maxval  (whitespace separated)
+    assert data[:2] == b"P6", "not a P6 ppm"
+    idx = 2
+    toks = []
+    while len(toks) < 3:
+        while idx < len(data) and data[idx] in b" \t\n\r":
+            idx += 1
+        if data[idx:idx+1] == b"#":
+            while data[idx] not in b"\n":
+                idx += 1
+            continue
+        start = idx
+        while data[idx] not in b" \t\n\r":
+            idx += 1
+        toks.append(int(data[start:idx]))
+    idx += 1  # single whitespace after maxval
+    w, h, mx = toks
+    body = data[idx:idx + w * h * 3]
+    px = []
+    for i in range(0, len(body), 3):
+        px.append((body[i] / 255.0, body[i+1] / 255.0, body[i+2] / 255.0))
+    return px
+
+# ---------- median cut ----------
+def median_cut(px, n):
+    buckets = [px]
+    while len(buckets) < n:
+        # choose the bucket with the largest single-channel range
+        best_i, best_ch, best_rng = 0, 0, -1
+        for i, b in enumerate(buckets):
+            if len(b) < 2:
+                continue
+            mins = [1.0, 1.0, 1.0]; maxs = [0.0, 0.0, 0.0]
+            for p in b:
+                for c in range(3):
+                    if p[c] < mins[c]: mins[c] = p[c]
+                    if p[c] > maxs[c]: maxs[c] = p[c]
+            for c in range(3):
+                rng = maxs[c] - mins[c]
+                if rng > best_rng:
+                    best_rng, best_i, best_ch = rng, i, c
+        if best_rng < 0:
+            break
+        b = buckets.pop(best_i)
+        b.sort(key=lambda p: p[best_ch])
+        mid = len(b) // 2
+        buckets.append(b[:mid]); buckets.append(b[mid:])
+    out = []
+    for b in buckets:
+        n_ = len(b) or 1
+        r = sum(p[0] for p in b) / n_
+        g = sum(p[1] for p in b) / n_
+        bl = sum(p[2] for p in b) / n_
+        out.append((r, g, bl, len(b)))
+    return out
+
+# ---------- derive theme ----------
+def derive(px):
+    # overall average = background mood
+    n = len(px)
+    ar = sum(p[0] for p in px) / n
+    ag = sum(p[1] for p in px) / n
+    ab = sum(p[2] for p in px) / n
+    ah, al, as_ = rgb_to_hls(ar, ag, ab)
+
+    bg      = hls(ah, 0.09, min(as_ * 0.9, 0.38))
+    bg_alt  = hls(ah, 0.145, min(as_ * 0.9, 0.34))
+    bg_alt2 = hls(ah, 0.21, min(as_ * 0.8, 0.30))
+    fg      = hls(ah, 0.93, 0.12)
+    fg_dim  = hls(ah, 0.72, 0.10)
+
+    # accents: vibrant, distinct-hue colors from the palette
+    pal = median_cut(list(px), 16)
+    scored = []
+    for (r, g, b, cnt) in pal:
+        h, l, s = rgb_to_hls(r, g, b)
+        # prefer saturated, mid-light colors, weighted a bit by population
+        score = s * (1.0 - abs(l - 0.55)) * (0.6 + 0.4 * (cnt / n))
+        scored.append((score, h, l, s))
+    scored.sort(reverse=True)
+    accents = []
+    for score, h, l, s in scored:
+        if all(hue_dist(h, ph) > 0.07 for ph in accents):
+            accents.append(h)
+        if len(accents) >= 3:
+            break
+    while len(accents) < 3:                      # fallback if wallpaper is flat
+        accents.append((ah + 0.33 * len(accents)) % 1.0)
+
+    def accent_rgb(h):                            # normalize to a vivid, visible tone
+        return hls(h, 0.66, 0.62)
+    acc = [accent_rgb(h) for h in accents]
+
+    # semantic ANSI-ish colors: fixed hues, harmonized slightly toward accent1
+    def blend(c1, c2, t):
+        return tuple(c1[i] * (1 - t) + c2[i] * t for i in range(3))
+    base = {"red": 0.00, "green": 0.36, "yellow": 0.13,
+            "blue": 0.60, "magenta": 0.83, "cyan": 0.50}
+    sem = {}
+    for name, h in base.items():
+        col = hls(h, 0.66, 0.55)
+        sem[name] = blend(col, acc[0], 0.12)
+
+    return {
+        "background": bg, "backgroundAlt": bg_alt, "backgroundAlt2": bg_alt2,
+        "foreground": fg, "foregroundDim": fg_dim,
+        "accent": acc[0], "accent2": acc[1], "accent3": acc[2],
+        **sem,
+    }
+
+# ---------- writers ----------
+def write(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        f.write(text)
+
+def gen_hypr(c):
+    def rgba(k): return f"rgba({rgb_hex(*c[k])}ff)"
+    # hyprlang colors (used if the config falls back to hyprland.conf)
+    write(f"{HOME}/.config/hypr/colors.conf",
+        "# auto-generated by wall-theme — do not edit\n"
+        f"$background = {rgba('background')}\n"
+        f"$backgroundAlt = {rgba('backgroundAlt')}\n"
+        f"$foreground = {rgba('foreground')}\n"
+        f"$accent = {rgba('accent')}\n"
+        f"$accent2 = {rgba('accent2')}\n"
+        f"$accent3 = {rgba('accent3')}\n")
+    # Lua colors (used by the active hyprland.lua config)
+    write(f"{HOME}/.config/hypr/colors.lua",
+        "-- auto-generated by wall-theme\nreturn {\n"
+        f'  background = "{rgba("background")}",\n'
+        f'  backgroundAlt = "{rgba("backgroundAlt")}",\n'
+        f'  foreground = "{rgba("foreground")}",\n'
+        f'  accent = "{rgba("accent")}",\n'
+        f'  accent2 = "{rgba("accent2")}",\n'
+        f'  accent3 = "{rgba("accent3")}",\n'
+        "}\n")
+
+def gen_gtkcss(c):
+    lines = ["/* auto-generated by wall-theme */"]
+    for k in ("background", "backgroundAlt", "backgroundAlt2", "foreground",
+              "foregroundDim", "accent", "accent2", "accent3",
+              "red", "green", "yellow", "blue", "magenta", "cyan"):
+        lines.append(f"@define-color {k} #{rgb_hex(*c[k])};")
+    css = "\n".join(lines) + "\n"
+    write(f"{HOME}/.config/waybar/colors.css", css)
+    write(f"{HOME}/.config/wofi/colors.css", css)
+
+def gen_qs_theme(c):
+    # Palette singleton for the custom Quickshell control-center panel.
+    # Quickshell hot-reloads its config dir, so rewriting this re-themes live.
+    def hx(k): return "#" + rgb_hex(*c[k])
+    write(f"{HOME}/.config/quickshell/Theme.qml",
+        "pragma Singleton\n"
+        "import Quickshell\n"
+        "import QtQuick\n\n"
+        "// auto-generated by wall-theme\n"
+        "Singleton {\n"
+        f'    property color accent:   "{hx("accent")}"\n'
+        f'    property color bg:       "{hx("background")}"\n'
+        f'    property color surface:  "{hx("backgroundAlt")}"\n'
+        f'    property color surface2: "{hx("backgroundAlt2")}"\n'
+        f'    property color fg:       "{hx("foreground")}"\n'
+        f'    property color dim:      "{hx("foregroundDim")}"\n'
+        "}\n")
+
+def gen_swaync(c):
+    def hx(k): return "#" + rgb_hex(*c[k])
+    # Frosted panel from the wallpaper's dark tone; accents on switches/actions.
+    write(f"{HOME}/.config/swaync/style.css",
+        "/* auto-generated by wall-theme */\n"
+        '* { font-family: "JetBrainsMono Nerd Font"; font-size: 13px; }\n'
+        ".control-center, .notification-row, .notification { background: transparent; }\n"
+        ".control-center {\n"
+        f"  background: {hx('background')}d9;\n"
+        f"  border: 1px solid {hx('foreground')}22;\n"
+        "  border-radius: 16px; margin: 8px; padding: 10px;\n"
+        f"  color: {hx('foreground')};\n}}\n"
+        f".widget-title {{ color: {hx('foreground')}; font-size: 15px; margin: 6px 4px 12px 4px; }}\n"
+        ".widget-title > button {\n"
+        f"  color: {hx('foreground')}; background: {hx('foreground')}14;\n"
+        "  border: none; border-radius: 8px; padding: 4px 10px; }\n"
+        f".widget-title > button:hover {{ background: {hx('accent')}; color: {hx('background')}; }}\n"
+        f".widget-dnd {{ color: {hx('foreground')}; margin: 0 4px 10px 4px; }}\n"
+        f".widget-dnd > switch {{ background: {hx('foreground')}22; border-radius: 12px; }}\n"
+        f".widget-dnd > switch:checked {{ background: {hx('accent')}; }}\n"
+        ".notification { border-radius: 12px; margin: 5px 4px; }\n"
+        ".notification-content {\n"
+        f"  background: {hx('backgroundAlt')}f0;\n"
+        f"  border: 1px solid {hx('foreground')}14;\n"
+        f"  border-radius: 12px; padding: 12px; color: {hx('foreground')}; }}\n"
+        f".notification.critical .notification-content {{ border-color: {hx('red')}; }}\n"
+        f".summary {{ color: {hx('foreground')}; font-weight: bold; }}\n"
+        f".body {{ color: {hx('foregroundDim')}; }}\n"
+        ".close-button {\n"
+        f"  background: {hx('foreground')}14; color: {hx('foreground')};\n"
+        "  border-radius: 8px; margin: 6px; }\n"
+        f".close-button:hover {{ background: {hx('red')}; color: {hx('background')}; }}\n"
+        ".notification-action {\n"
+        f"  background: {hx('foreground')}10; color: {hx('foreground')};\n"
+        "  border: none; border-radius: 8px; margin: 4px; }\n"
+        f".notification-action:hover {{ background: {hx('accent')}; color: {hx('background')}; }}\n")
+
+def gen_gtk(c):
+    def hx(k): return "#" + rgb_hex(*c[k])
+    # libadwaita (GTK4) named colors + GTK3 fallbacks — file managers/dialogs
+    # recolor toward the wallpaper. Written to both gtk-3.0 and gtk-4.0.
+    css = ("/* auto-generated by wall-theme */\n"
+        f"@define-color accent_color {hx('accent')};\n"
+        f"@define-color accent_bg_color {hx('accent')};\n"
+        f"@define-color accent_fg_color {hx('background')};\n"
+        f"@define-color window_bg_color {hx('background')};\n"
+        f"@define-color window_fg_color {hx('foreground')};\n"
+        f"@define-color view_bg_color {hx('backgroundAlt')};\n"
+        f"@define-color view_fg_color {hx('foreground')};\n"
+        f"@define-color headerbar_bg_color {hx('backgroundAlt')};\n"
+        f"@define-color headerbar_fg_color {hx('foreground')};\n"
+        f"@define-color card_bg_color {hx('backgroundAlt2')};\n"
+        f"@define-color popover_bg_color {hx('backgroundAlt')};\n"
+        f"@define-color sidebar_bg_color {hx('backgroundAlt')};\n"
+        f"@define-color theme_bg_color {hx('background')};\n"
+        f"@define-color theme_fg_color {hx('foreground')};\n"
+        f"@define-color theme_selected_bg_color {hx('accent')};\n")
+    write(f"{HOME}/.config/gtk-3.0/gtk.css", css)
+    write(f"{HOME}/.config/gtk-4.0/gtk.css", css)
+
+def gen_kitty(c):
+    def hx(k): return "#" + rgb_hex(*c[k])
+    write(f"{HOME}/.config/kitty/colors.conf",
+        "# auto-generated by wall-theme\n"
+        f"background {hx('background')}\n"
+        f"foreground {hx('foreground')}\n"
+        f"cursor {hx('accent')}\n"
+        f"selection_background {hx('accent')}\n"
+        f"selection_foreground {hx('background')}\n"
+        f"color0 {hx('backgroundAlt')}\n"   f"color8 {hx('backgroundAlt2')}\n"
+        f"color1 {hx('red')}\n"             f"color9 {hx('red')}\n"
+        f"color2 {hx('green')}\n"           f"color10 {hx('green')}\n"
+        f"color3 {hx('yellow')}\n"          f"color11 {hx('yellow')}\n"
+        f"color4 {hx('blue')}\n"            f"color12 {hx('blue')}\n"
+        f"color5 {hx('magenta')}\n"         f"color13 {hx('magenta')}\n"
+        f"color6 {hx('cyan')}\n"            f"color14 {hx('cyan')}\n"
+        f"color7 {hx('foregroundDim')}\n"   f"color15 {hx('foreground')}\n")
+
+def gen_mako(c):
+    def hx(k): return rgb_hex(*c[k])
+    # Liquid glass: translucent bg (blur frosts it) + subtle neutral rim.
+    write(f"{HOME}/.config/mako/config",
+        "# auto-generated by wall-theme\n"
+        "font=JetBrainsMono Nerd Font 10\n"
+        f"background-color=#{hx('background')}80\n"   # ~50% -> frosted glass
+        f"text-color=#{hx('foreground')}\n"
+        f"border-color=#{hx('foreground')}33\n"       # faint neutral glass rim
+        "border-size=1\nborder-radius=16\npadding=12\nmargin=10\n"
+        "default-timeout=6000\nmax-visible=5\nanchor=top-right\n\n"
+        "[urgency=critical]\n"
+        f"border-color=#{hx('red')}\ndefault-timeout=0\n")
+
+# ---------- reload running apps ----------
+def sig():
+    s = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+    if s:
+        return s
+    d = f"/run/user/{os.getuid()}/hypr"
+    entries = sorted(glob.glob(f"{d}/*"), key=os.path.getmtime, reverse=True)
+    return os.path.basename(entries[0]) if entries else ""
+
+def run(*a):
+    subprocess.run(a, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def wayland_display():
+    wd = os.environ.get("WAYLAND_DISPLAY")
+    if wd:
+        return wd
+    rt = f"/run/user/{os.getuid()}"
+    for f in sorted(glob.glob(f"{rt}/wayland-*")):
+        if not f.endswith(".lock"):
+            return os.path.basename(f)
+    return "wayland-1"
+
+def session_env():
+    env = dict(os.environ)
+    env["HYPRLAND_INSTANCE_SIGNATURE"] = sig()
+    env["WAYLAND_DISPLAY"] = wayland_display()
+    env.setdefault("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+    return env
+
+def launch(cmd, env):
+    # detached launch (survives the caller); reliable regardless of hyprctl
+    subprocess.Popen(["setsid", "-f"] + cmd, env=env,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def reload_all():
+    import time
+    env = session_env()
+    subprocess.run(["hyprctl", "reload"], env=env,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    run("pkill", "-x", "waybar"); time.sleep(0.5)
+    launch(["waybar"], env)
+    run("swaync-client", "--reload-config")   # swaync is the notification daemon
+    run("swaync-client", "--reload-css")      # re-apply the wallpaper-themed style
+    run("pkill", "-SIGUSR1", "-x", "kitty")   # kitty live-reloads its config
+
+def set_wallpaper(path, env):
+    import time
+    ext = os.path.splitext(path)[1].lower()
+    if ext in VIDEO_EXT:
+        run("pkill", "-x", "awww-daemon")
+        run("pkill", "-x", "mpvpaper")
+        time.sleep(0.3)
+        launch(["mpvpaper", "-p", "-o", "no-audio loop hwdec=auto", "eDP-1", path], env)
+    else:
+        run("pkill", "-x", "mpvpaper")
+        if subprocess.run(["pgrep", "-x", "awww-daemon"],
+                          stdout=subprocess.DEVNULL).returncode != 0:
+            launch(["awww-daemon"], env)
+            time.sleep(1)
+        subprocess.run(["awww", "img", path, "-t", "grow", "--transition-duration", "2"],
+                       env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def main():
+    # optional: switch wallpaper first
+    if len(sys.argv) > 1:
+        newwall = os.path.abspath(os.path.expanduser(sys.argv[1]))
+        if not os.path.isfile(newwall):
+            print(f"no such file: {newwall}"); sys.exit(1)
+        set_wallpaper(newwall, session_env())
+        write(STATE, newwall + "\n")
+
+    if not os.path.isfile(STATE):
+        print("no current wallpaper recorded; pass a path once: wall-theme <file>")
+        sys.exit(1)
+    wall = open(STATE).read().strip()
+    print(f"theming from: {wall}")
+    px = grab_pixels(wall)
+    c = derive(px)
+    print("palette:", " ".join(f"{k}=#{rgb_hex(*c[k])}"
+          for k in ("background", "foreground", "accent", "accent2", "accent3")))
+    gen_hypr(c); gen_gtkcss(c); gen_kitty(c); gen_swaync(c); gen_gtk(c)
+    gen_qs_theme(c)
+    reload_all()
+    run("notify-send", "-t", "3000", "Theme updated",
+        f"Recolored from wallpaper\naccent #{rgb_hex(*c['accent'])}")
+    print("done.")
+
+if __name__ == "__main__":
+    main()

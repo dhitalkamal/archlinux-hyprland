@@ -1,0 +1,13 @@
+#!/bin/sh
+# Quake-style dropdown terminal: a floating kitty on a special workspace that
+# slides in/out on a keypress. First call spawns it; later calls just toggle.
+# (This Hyprland uses a Lua config, so hyprctl dispatch takes hl.dsp.* forms.)
+CLASS=dropterm
+WS=scratchterm
+if hyprctl clients -j | grep -q "\"class\": \"$CLASS\""; then
+    hyprctl dispatch "hl.dsp.workspace.toggle_special(\"$WS\")"
+else
+    hyprctl dispatch "hl.dsp.exec_cmd(\"kitty --class $CLASS\", {workspace=\"special:$WS\", float=true, size=\"1240 560\", move=\"340 44\"})"
+    sleep 0.35
+    hyprctl dispatch "hl.dsp.workspace.toggle_special(\"$WS\")"
+fi

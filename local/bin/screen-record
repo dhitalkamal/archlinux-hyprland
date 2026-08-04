@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# screen-record — toggle a region screen recording with wf-recorder (Alt+Print).
+# Saves timestamped .mp4 files to ~/Videos. Needs: wf-recorder, slurp.
+OUTDIR="$HOME/Videos"; mkdir -p "$OUTDIR"
+STATE="${XDG_RUNTIME_DIR:-/tmp}/recording.on"
+
+if pgrep -x wf-recorder >/dev/null; then
+    pkill -INT -x wf-recorder            # stop → finalizes the file
+    rm -f "$STATE"
+    pkill -RTMIN+9 -x waybar 2>/dev/null
+    notify-send -t 3000 "󰑊 Recording saved" "$OUTDIR"
+else
+    command -v wf-recorder >/dev/null 2>&1 || { notify-send "Recorder" "wf-recorder not installed"; exit 1; }
+    region=$(slurp) || exit 0            # cancel = no selection
+    file="$OUTDIR/rec-$(date +%Y%m%d-%H%M%S).mp4"
+    : > "$STATE"
+    pkill -RTMIN+9 -x waybar 2>/dev/null
+    notify-send -t 2000 "󰑊 Recording…" "Alt+Print again to stop"
+    setsid -f wf-recorder -g "$region" -f "$file" >/dev/null 2>&1
+fi

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# waypaper post_command hook: record the chosen wallpaper and re-theme from it.
+# waypaper already set the wallpaper via its backend; we only sync state + theme.
+p="$1"
+p="${p/#\~/$HOME}"                       # expand a leading ~ if waypaper passes one
+[ -n "$p" ] && [ -e "$p" ] && printf '%s\n' "$p" > "$HOME/.config/hypr/current-wallpaper"
+exec "$HOME/.local/bin/wall-theme"        # no-arg = theme from current-wallpaper (won't re-set it)

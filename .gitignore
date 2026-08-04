@@ -1,0 +1,4 @@
+# Machine-specific state, not portable config — regenerated at runtime.
+config/hypr/current-wallpaper
+*.bak
+.backup-*

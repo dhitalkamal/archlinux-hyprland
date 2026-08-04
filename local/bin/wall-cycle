@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Auto-cycle wallpapers on an interval. Started once at Hyprland launch.
+# Interval in seconds via $WALLPAPER_INTERVAL (default 600 = 10 min).
+INTERVAL="${WALLPAPER_INTERVAL:-600}"
+
+# ensure only one cycler runs
+for pid in $(pgrep -f "[w]all-cycle"); do
+    [ "$pid" != "$$" ] && kill "$pid" 2>/dev/null
+done
+
+while true; do
+    sleep "$INTERVAL"
+    "$HOME/.local/bin/wall-next" >/dev/null 2>&1
+done

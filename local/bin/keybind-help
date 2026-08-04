@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# keybind-help — searchable macOS-style shortcut cheatsheet (bound to ⌘/).
+cat <<'EOF' | wofi --dmenu -i -p "Keybindings" --width 660 --height 600 >/dev/null
+⌘ Space          Launcher (Spotlight)
+⌘ Return         Terminal
+⌘ E              File manager
+⌘ Q              Close / quit window
+⌘ Ctrl Q         Lock screen
+⌘ Shift Q        Log-out menu
+⌘ Tab  /  ⌘⇧Tab  Next / previous window
+⌘ `              Toggle last window
+⌘ H  /  ⌘⇧H      Hide window / peek hidden
+⌘ 1 … 5          Switch desktop
+⌘ Shift 3        Screenshot → file
+⌘ Shift 4        Screenshot region → annotate
+⌘ Shift 5        Screenshot region → clipboard
+⌘ /              This cheatsheet
+⌘ Ctrl Space     Emoji picker
+──────────  In-app (via keyd)  ──────────
+⌘ C / X / V      Copy / Cut / Paste
+⌘ A              Select all
+⌘ Z  /  ⌘⇧Z      Undo / Redo
+⌘ S              Save
+⌘ F              Find
+⌘ T / W          New tab / close tab
+⌘ N              New window
+⌘ R              Reload
+⌘ L              Address bar
+⌘ B / I / U      Bold / Italic / Underline
+⌘ + / - / 0      Zoom in / out / reset
+⌘ ,              Preferences
+──────────  Window management (Alt)  ──────────
+Alt ← ↑ ↓ →      Move focus  (or h j k l)
+Alt Shift ← ↑ ↓ →  Move window
+Alt 1 … 0        Switch workspace
+Alt Shift 1 … 0  Move window to workspace
+Alt F  /  Alt⇧F  Fullscreen / float
+Alt P / Alt S    Pseudotile / toggle split
+Alt drag         Move (L) / resize (R) window
+──────────  Utilities (Alt)  ──────────
+Alt V            Clipboard history
+Alt A            App grid (Launchpad)
+Alt W            Wallpaper picker
+Alt Shift W      Re-theme from wallpaper
+Alt Shift N      Next wallpaper
+Alt N            Notification center
+Alt I            Settings hub
+Alt Shift P      Color picker
+Alt Shift S      Night light
+Alt Shift C      Caffeine (keep awake)
+Alt Print        Screen recording toggle
+EOF

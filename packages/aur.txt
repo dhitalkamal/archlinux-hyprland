@@ -1,0 +1,12 @@
+# AUR packages for this Hyprland desktop.
+# Installed with: yay -S --needed - < packages/aur.txt
+# yay itself is bootstrapped by scripts/01-packages.sh if not already present.
+
+sddm-astronaut-theme
+iwgtk
+pwvucontrol
+mpvpaper
+waypaper
+wlogout
+catppuccin-gtk-theme-mocha
+catppuccin-cursors-mocha

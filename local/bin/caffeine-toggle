@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# caffeine-toggle — temporarily disable hypridle so the screen never dims/locks
+# (for watching video or presenting). Toggles by stopping/starting hypridle.
+STATE="${XDG_RUNTIME_DIR:-/tmp}/caffeine.on"
+
+if pgrep -x hypridle >/dev/null; then
+    # idle management is running → caffeinate (stop it)
+    pkill -x hypridle
+    : > "$STATE"
+    notify-send -t 2000 "󰅶 Caffeine ON" "Screen stays awake — no dim/lock/sleep"
+else
+    # already caffeinated → resume normal idle management
+    setsid -f hypridle >/dev/null 2>&1
+    rm -f "$STATE"
+    notify-send -t 2000 "󰾪 Caffeine OFF" "Normal idle timers restored"
+fi
+
+pkill -RTMIN+8 -x waybar 2>/dev/null   # refresh the Waybar caffeine icon

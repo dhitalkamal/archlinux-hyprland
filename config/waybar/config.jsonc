@@ -1,0 +1,166 @@
+// Waybar — minimal monochrome bar: workspaces + user@host | temp mem cpu
+// [Arch] clock date tray | volume brightness battery power.
+{
+    "layer": "top",
+    "position": "top",
+    "height": 34,
+    "spacing": 2,
+    "margin-top": 6,
+    "margin-left": 10,
+    "margin-right": 10,
+
+    "modules-left":   ["custom/menu", "hyprland/workspaces", "hyprland/window"],
+
+    "hyprland/window": {
+        "format": "{title}",
+        "max-length": 22,
+        "separate-outputs": true,
+        "tooltip": false
+    },
+    "modules-center": ["custom/sysinfo", "custom/arch", "clock"],
+
+    "custom/sysinfo": {
+        "exec": "~/.local/bin/waybar-sysinfo",
+        "interval": 3,
+        "tooltip": false
+    },
+    "modules-right":  ["custom/user", "custom/updates", "custom/recorder", "custom/caffeine", "network", "bluetooth", "pulseaudio", "custom/control", "battery", "tray", "custom/power"],
+
+    "custom/control": {
+        "format": "󰕮",
+        "tooltip": false,
+        "on-click": "qs ipc call cc toggle"
+    },
+
+    "custom/updates": {
+        "exec": "~/.local/bin/waybar-updates",
+        "return-type": "json",
+        "interval": 3600,
+        "signal": 10,
+        "on-click": "kitty --hold --title updates -e sudo pacman -Syu"
+    },
+
+    "network": {
+        "format-wifi": "{icon}",
+        "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+        "format-ethernet": "󰈀 {ipaddr}",
+        "format-disconnected": "󰤮",
+        "tooltip-format-wifi": "{essid}  ({signalStrength}%)\n{ipaddr}",
+        "tooltip-format-ethernet": "{ifname}\n{ipaddr}",
+        "tooltip-format-disconnected": "Disconnected",
+        "on-click": "iwgtk"
+    },
+
+    "bluetooth": {
+        "format": "󰂯",
+        "format-disabled": "",
+        "format-off": "",
+        "format-connected": "󰂱 {num_connections}",
+        "tooltip-format": "{controller_alias}",
+        "tooltip-format-connected": "{controller_alias}\n{device_enumerate}",
+        "on-click": "blueman-manager"
+    },
+
+    "custom/recorder": {
+        "exec": "if [ -f \"${XDG_RUNTIME_DIR}/recording.on\" ]; then echo '{\"text\":\"\",\"class\":\"rec\",\"tooltip\":\"Recording — click to stop\"}'; else echo '{\"text\":\"\"}'; fi",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 9,
+        "on-click": "~/.local/bin/screen-record"
+    },
+
+    "custom/caffeine": {
+        "exec": "if [ -f \"${XDG_RUNTIME_DIR}/caffeine.on\" ]; then echo '{\"text\":\"󰅶\",\"class\":\"on\",\"tooltip\":\"Caffeine: staying awake\"}'; else echo '{\"text\":\"\"}'; fi",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 8,
+        "on-click": "~/.local/bin/caffeine-toggle"
+    },
+
+    "custom/menu": {
+        "format": "",
+        "tooltip": false,
+        "on-click": "waypaper"
+    },
+
+    "hyprland/workspaces": {
+        "format": "{id}",
+        "on-click": "activate",
+        "sort-by-number": true,
+        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1",
+        "persistent-workspaces": { "1": [], "2": [], "3": [], "4": [], "5": [] }
+    },
+
+    "custom/user": {
+        "exec": "echo \"$(whoami) @ $(uname -n)\"",
+        "interval": 3600,
+        "tooltip": false
+    },
+
+    "temperature": {
+        "thermal-zone": 6,
+        "format": " {temperatureC}°C",
+        "critical-threshold": 85,
+        "interval": 5,
+        "tooltip": false
+    },
+
+    "memory": { "format": " {percentage}%", "interval": 5,
+                "tooltip-format": "{used:0.1f}G / {total:0.1f}G" },
+    "cpu":    { "format": " {usage}%", "interval": 3, "tooltip": false },
+
+    "custom/arch": {
+        "format": "󰣇",
+        "tooltip": false,
+        "on-click": "wofi --show drun"
+    },
+
+    "clock": {
+        "format": "{:%a %H:%M   %d %b}",
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
+    },
+    "clock#date": { "format": " {:%d %b}", "tooltip": false },
+
+    "tray": { "icon-size": 14, "spacing": 8 },
+
+    "pulseaudio": {
+        "format": "󰕾",
+        "format-muted": "󰝟",
+        "tooltip-format": "{desc}\n{volume}%  ·  scroll to adjust · click for Control Center · right-click mixer · middle-click mute",
+        "scroll-step": 5,
+        "on-click": "qs ipc call cc toggle",
+        "on-click-right": "pwvucontrol",
+        "on-click-middle": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-scroll-up": "wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+",
+        "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+    },
+
+    "backlight": {
+        "device": "intel_backlight",
+        "format": "󰃠",
+        "tooltip-format": "Brightness {percent}%  ·  scroll to adjust · click for Control Center",
+        "on-click": "qs ipc call cc toggle",
+        "on-scroll-up": "brightnessctl set 5%+",
+        "on-scroll-down": "brightnessctl set 5%-"
+    },
+
+    "battery": {
+        "states": { "warning": 30, "critical": 15 },
+        "format": "{icon} {capacity}%",
+        "format-charging": "{icon} {capacity}%",
+        "format-plugged": "{icon} {capacity}%",
+        "format-full": "{icon} {capacity}%",
+        "format-icons": {
+            "default": ["󰂎","󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"],
+            "charging": ["󰢟","󰢜","󰂆","󰂇","󰂈","󰢝","󰂉","󰢞","󰂊","󰂋","󰂅"]
+        },
+        "tooltip-format": "{capacity}%  ·  {timeTo}"
+    },
+
+    "custom/power": {
+        "format": "⏻",
+        "tooltip": false,
+        "on-click": "wlogout -b 5 -p layer-shell"
+    }
+}

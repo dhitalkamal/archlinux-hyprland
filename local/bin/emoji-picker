@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# emoji-picker — searchable emoji; types the choice into the focused app and also
+# copies it to the clipboard. Bound to ⌘⌃Space. Needs: wofi, wtype (optional).
+list=$(cat <<'EOF'
+😀 grinning happy
+😂 joy laughing tears
+🙂 slight smile
+😉 wink
+😍 heart eyes love
+😎 cool sunglasses
+🤔 thinking hmm
+😅 sweat nervous
+😭 sob crying
+😡 angry mad
+🥺 pleading
+👍 thumbs up yes ok
+👎 thumbs down no
+🙏 pray thanks please
+👏 clap applause
+🙌 raised hands hooray
+💪 muscle strong
+🤝 handshake deal
+👀 eyes look
+🔥 fire lit hot
+✨ sparkles shiny
+🎉 party tada celebrate
+🥳 partying face
+❤️ red heart love
+💯 hundred perfect
+✅ check done tick
+❌ cross no wrong
+⚠️ warning caution
+⭐ star
+🚀 rocket launch ship
+💡 idea bulb
+📝 memo note
+📌 pin
+🔧 wrench fix tool
+🐛 bug
+💻 laptop computer code
+☕ coffee
+🍕 pizza food
+🍺 beer cheers
+🎵 music note
+😴 sleep tired zzz
+🤯 mind blown
+🫡 salute
+🤞 fingers crossed
+💤 zzz sleep
+EOF
+)
+choice=$(printf '%s\n' "$list" | wofi --dmenu -i -p "Emoji" --width 440 --height 420)
+[ -n "$choice" ] || exit 0
+emoji=${choice%% *}
+printf '%s' "$emoji" | wl-copy
+command -v wtype >/dev/null 2>&1 && wtype "$emoji"

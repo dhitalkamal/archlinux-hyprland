@@ -1,0 +1,90 @@
+# Native (official repo) packages for this Hyprland desktop.
+# Installed with: pacman -S --needed - < packages/pacman.txt
+# One package per line; blank lines and lines starting with # are ignored by install.sh.
+
+# --- Wayland compositor + session ---
+hyprland
+hyprpolkitagent
+xorg-xwayland
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+
+# --- Hypr ecosystem tools ---
+hypridle
+hyprlock
+hyprpaper
+hyprpicker
+hyprsunset
+
+# --- Bar / launcher / notifications ---
+waybar
+wofi
+swaync
+quickshell
+
+# --- Terminal ---
+kitty
+kitty-terminfo
+
+# --- Display manager ---
+sddm
+
+# --- Input remapping ---
+keyd
+
+# --- Qt/GTK plumbing (theming + app compat) ---
+qt5-wayland
+qt6-wayland
+qt5ct
+qt6ct
+kvantum
+
+# --- Audio ---
+pipewire
+pipewire-alsa
+pipewire-pulse
+wireplumber
+
+# --- Screenshots / screen recording / clipboard ---
+grim
+slurp
+swappy
+wf-recorder
+wl-clipboard
+cliphist
+
+# --- Media / brightness / power ---
+playerctl
+brightnessctl
+power-profiles-daemon
+
+# --- Disks / bluetooth / network ---
+udiskie
+blueman
+bluez
+bluez-utils
+iwd
+
+# --- Wallpaper ---
+awww
+
+# --- Misc desktop utilities ---
+nwg-displays
+nwg-look
+nwg-drawer
+
+# --- Theming assets ---
+papirus-icon-theme
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+ttf-firacode-nerd
+ttf-jetbrains-mono-nerd
+woff2-font-awesome
+
+# --- Login/boot polish ---
+plymouth
+
+# --- Secrets / keyring ---
+gnome-keyring
+libappindicator

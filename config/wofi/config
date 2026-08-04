@@ -1,0 +1,19 @@
+# wofi launcher settings
+width=600
+height=430
+location=center
+show=drun
+prompt=Search apps…
+matching=fuzzy
+insensitive=true
+filter_rate=100
+allow_markup=true
+allow_images=true
+image_size=32
+no_actions=true
+hide_scroll=true
+halign=fill
+orientation=vertical
+content_halign=fill
+gtk_dark=true
+term=kitty

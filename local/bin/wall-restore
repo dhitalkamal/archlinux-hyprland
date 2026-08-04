@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Restore the last-selected wallpaper at login (image -> awww, video -> mpvpaper).
+# The chosen wallpaper is remembered in ~/.config/hypr/current-wallpaper.
+wp="$(cat "$HOME/.config/hypr/current-wallpaper" 2>/dev/null)"
+[ -n "$wp" ] && [ -e "$wp" ] || exit 0
+
+case "${wp,,}" in
+    *.mp4|*.mkv|*.webm|*.mov|*.m4v)
+        pkill -x awww-daemon 2>/dev/null
+        setsid -f mpvpaper -p -o "no-audio loop hwdec=auto" eDP-1 "$wp" ;;
+    *)
+        pkill -x mpvpaper 2>/dev/null
+        setsid -f awww-daemon 2>/dev/null
+        sleep 1
+        awww img "$wp" -t grow --transition-duration 2 ;;
+esac

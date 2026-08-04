@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Settings hub — one entry point that routes to the right tool per category.
+opts="  Appearance   (GTK theme · icons · cursor)
+󰸉  Wallpaper
+󰍹  Display / Monitors
+  Audio
+  Wi-Fi
+󰂯  Bluetooth
+󰓅  Power profile
+󰃠  Night light  (toggle)
+󰂚  Notifications
+󰅐  Date & Time
+󰅢  Clipboard history
+󰚰  Update system
+󰄪  System info
+  Task manager
+󰐥  Power menu"
+
+choice=$(printf '%s' "$opts" | wofi --dmenu -p "Settings" -i)
+
+case "$choice" in
+    *Appearance*)    nwg-look ;;
+    *Wallpaper*)     waypaper ;;
+    *Display*)       command -v nwg-displays >/dev/null && nwg-displays \
+                        || notify-send "Settings" "Install nwg-displays for the monitor GUI" ;;
+    *Audio*)         pavucontrol ;;
+    *Wi-Fi*)         kitty -e impala ;;
+    *Bluetooth*)     command -v blueman-manager >/dev/null && blueman-manager \
+                        || kitty -e bluetoothctl ;;
+    *"Power profile"*)
+        p=$(printf 'power-saver\nbalanced\nperformance' | wofi --dmenu -p "Power profile" -i)
+        [ -n "$p" ] && powerprofilesctl set "$p" && notify-send "Power profile" "Set to $p" ;;
+    *"Night light"*) pkill hyprsunset || hyprsunset -t 3800 & ;;
+    *Notifications*) swaync-client -t -sw ;;
+    *"Date & Time"*)
+        sub=$(printf '  Set timezone\n󰦖  Toggle auto time-sync (NTP)\n  Show calendar' | wofi --dmenu -p "Date & Time" -i)
+        case "$sub" in
+            *timezone*)
+                tz=$(timedatectl list-timezones | wofi --dmenu -p "Timezone" -i)
+                [ -n "$tz" ] && timedatectl set-timezone "$tz" && notify-send "Timezone" "Set to $tz" ;;
+            *sync*)
+                if [ "$(timedatectl show -p NTP --value)" = "yes" ]; then
+                    timedatectl set-ntp false; notify-send "Time sync" "Auto-sync OFF"
+                else
+                    timedatectl set-ntp true;  notify-send "Time sync" "Auto-sync ON"
+                fi ;;
+            *[Cc]alendar*)
+                kitty -e sh -c 'cal -3; echo; date "+%A, %d %B %Y  %H:%M  (%Z)"; read -n1 -p "press any key"' ;;
+        esac ;;
+    *Clipboard*)     cliphist list | wofi --dmenu | cliphist decode | wl-copy ;;
+    *Update*)        kitty -e sh -c 'sudo pacman -Syu; echo; read -n1 -p "Done — press any key."' ;;
+    *"System info"*) kitty -e sh -c 'command -v fastfetch >/dev/null && fastfetch || { uname -a; echo; free -h; }; read -n1 -p "press any key"' ;;
+    *"Task manager"*) command -v btop >/dev/null && kitty -e btop || kitty -e htop ;;
+    *"Power menu"*)  wlogout -b 5 -p layer-shell ;;
+esac
