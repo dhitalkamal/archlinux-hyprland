@@ -62,8 +62,10 @@ scripts/
   03-keyd.sh                 [asks] installs the keyd remap to /etc/keyd
   04-sddm.sh                 [asks] enables SDDM + astronaut theme
   05-network.sh              [always asks] optional switch to iwd + systemd-networkd
+  06-claude.sh               symlinks claude/.claude/* -> ~/.claude
 config/                     mirrors ~/.config/<app> — each app dir is symlinked whole
 local/bin/                  ~/.local/bin scripts, symlinked individually
+claude/.claude/             Claude Code config — see "Claude Code setup" below
 packages/                  pacman.txt / aur.txt package lists
 ```
 
@@ -77,6 +79,26 @@ generated color files (`colors.conf`, `colors.css`, `gtk.css`, `Theme.qml`,
 `swaync/style.css`, ...) straight into paths that live inside the symlinked
 repo directory — so if you like a wallpaper's palette, `git add`/`commit` from
 inside `~/.config/hypr` (etc.) picks it up like any other repo file.
+
+## Claude Code setup
+
+`claude/.claude/` is a full Claude Code config, linked into `~/.claude/` by
+`scripts/06-claude.sh`:
+
+| Piece | Purpose |
+|---|---|
+| `CLAUDE.md` | Global rules: execution-mode detection (interactive/headless/routine/ci), the PROCEED gate for interactive sessions, package manager/architecture/TDD/git conventions, zero-decoration writing style |
+| `hooks/` | Enforcement at the tool-call layer: blocks force-push and destructive SQL/`rm -rf`, gates writes to the live hook/agent/CLAUDE.md paths (drafts must go through `~/.claude/pending/` first), auto-rebases before push, checks file size and decorative characters |
+| `agents/` | `strategist` (long-horizon), `devils-advocate` (adversarial), `researcher` (evidence), `conductor` (multi-repo dispatch), `eval-runner` (self-improvement loop runner) |
+| `commands/council.md` | `/council` — 3-round adversarial decision process with mandatory dissent recording, for genuinely uncertain and hard-to-reverse calls only |
+| `evals/`, `headless/` | Eval-loop and headless (`claude -p`) task specs |
+| `orchestration/orchestrator.md` | Multi-repo coordinator spec; runtime state lives in `~/.claude/orchestration/state.json` (machine-local, not repo-tracked — add repo names there to enable the routines below) |
+| `routines/` | Specs for `morning-brief`, `nightly-pr-triage`, `weekly-deps-audit` — read-only reporting jobs. These are specs only; wire them to an actual schedule yourself (cron, systemd timer, or Claude Code's own scheduler) |
+| `statusline.sh` | Context-usage / cost / branch / model status line |
+
+`~/.claude/pending/{hooks,skills,agents}/` are created but never repo-tracked —
+they're where agent-drafted tooling changes land for human review before
+promotion into `claude/.claude/`.
 
 ## Opinionated choices
 

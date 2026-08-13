@@ -44,6 +44,8 @@ This will, in order:
   3. Install the keyd macOS-style keyboard remap  [asks first]
   4. Enable SDDM with the astronaut theme         [asks first]
   5. Optionally switch to iwd + systemd-networkd  [always asks]
+  6. Symlink Claude Code config (CLAUDE.md, hooks, agents,
+     commands, routines) from this repo into ~/.claude
 
 Anything already at a target path gets backed up, never deleted.
 ==========================================================
@@ -63,6 +65,7 @@ bash scripts/02-link-configs.sh
 bash scripts/03-keyd.sh
 bash scripts/04-sddm.sh
 bash scripts/05-network.sh
+bash scripts/06-claude.sh
 
 ok "Done."
 log "Reboot (or at least re-login) to pick up SDDM/keyd/network changes and start Hyprland fresh."
