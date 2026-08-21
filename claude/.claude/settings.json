@@ -1,9 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "model": "sonnet",
-  "tui": "fullscreen",
   "cleanupPeriodDays": 14,
-  "skipWorkflowUsageWarning": true,
   "env": {
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "70",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
@@ -63,9 +60,9 @@
       "Read(.env.example)",
       "Read(**/.env.example)",
       "Read(/home/kamaldhital/**)",
-      "Write(/home/kamaldhital/.claude/logs/**)",
-      "Write(/home/kamaldhital/.claude/pending/**)",
-      "Write(/home/kamaldhital/.claude/orchestration/**)",
+      "Edit(/home/kamaldhital/.claude/logs/**)",
+      "Edit(/home/kamaldhital/.claude/pending/**)",
+      "Edit(/home/kamaldhital/.claude/orchestration/**)",
       "WebSearch"
     ],
     "deny": [
@@ -81,13 +78,13 @@
       "Read(**/.ssh/**)",
       "Read(**/.aws/credentials)",
       "Read(**/credentials.json)",
-      "Write(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/hooks/**)",
-      "Write(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/agents/**)",
-      "Write(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/CLAUDE.md)",
-      "Write(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/settings.json)",
-      "Write(/home/kamaldhital/.claude/hooks/**)",
-      "Write(/home/kamaldhital/.claude/settings.json)",
-      "Write(/home/kamaldhital/.claude/CLAUDE.md)"
+      "Edit(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/hooks/**)",
+      "Edit(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/agents/**)",
+      "Edit(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/CLAUDE.md)",
+      "Edit(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/settings.json)",
+      "Edit(/home/kamaldhital/.claude/hooks/**)",
+      "Edit(/home/kamaldhital/.claude/settings.json)",
+      "Edit(/home/kamaldhital/.claude/CLAUDE.md)"
     ],
     "ask": [
       "Bash(git push *)",
@@ -102,6 +99,7 @@
     ],
     "defaultMode": "auto"
   },
+  "model": "sonnet",
   "enableAllProjectMcpServers": true,
   "hooks": {
     "SessionStart": [
@@ -227,12 +225,14 @@
     "superpowers@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true
   },
+  "language": "english",
+  "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
   "theme": "dark",
   "editorMode": "normal",
   "preferredNotifChannel": "notifications_disabled",
   "teammateMode": "in-process",
   "skipAutoPermissionPrompt": true,
   "useAutoModeDuringPlan": true,
-  "language": "english",
   "respectGitignoreForContext": true
 }
