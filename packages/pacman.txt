@@ -26,6 +26,9 @@ quickshell
 kitty
 kitty-terminfo
 
+# --- File manager (super+E, terminal-based) ---
+yazi
+
 # --- Display manager ---
 sddm
 

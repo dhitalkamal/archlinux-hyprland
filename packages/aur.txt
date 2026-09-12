@@ -10,3 +10,7 @@ waypaper
 wlogout
 catppuccin-gtk-theme-mocha
 catppuccin-cursors-mocha
+
+# browser + system snapshots on pacman upgrades
+zen-browser-bin
+timeshift-autosnap
