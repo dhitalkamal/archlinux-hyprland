@@ -7,7 +7,9 @@ WS=scratchterm
 if hyprctl clients -j | grep -q "\"class\": \"$CLASS\""; then
     hyprctl dispatch "hl.dsp.workspace.toggle_special(\"$WS\")"
 else
+    # the workspace=special:$WS rule below already surfaces the special
+    # workspace on spawn, so no extra toggle_special call here (that used
+    # to immediately hide it again, causing a flash-then-close on first run)
     hyprctl dispatch "hl.dsp.exec_cmd(\"kitty --class $CLASS\", {workspace=\"special:$WS\", float=true, size=\"1240 560\", move=\"340 44\"})"
     sleep 0.35
-    hyprctl dispatch "hl.dsp.workspace.toggle_special(\"$WS\")"
 fi

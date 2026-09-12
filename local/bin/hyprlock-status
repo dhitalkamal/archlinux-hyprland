@@ -23,7 +23,7 @@ if [ -r "$bat/capacity" ]; then
 fi
 
 # --- Keyboard layout ---
-lay=$(hyprctl getoption -j input:kb_layout 2>/dev/null | jq -r '.str' 2>/dev/null | cut -d, -f1)
+lay=$(hyprctl getoption input:kb_layout 2>/dev/null | awk -F': ' '/^str:/{print $2}' | cut -d, -f1)
 [ -n "$lay" ] && [ "$lay" != "null" ] && parts+=("󰌌 ${lay^^}")
 
 

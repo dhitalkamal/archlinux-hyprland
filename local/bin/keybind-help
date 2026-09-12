@@ -7,6 +7,8 @@ cat <<'EOF' | wofi --dmenu -i -p "Keybindings" --width 660 --height 600 >/dev/nu
 ⌘ Q              Close / quit window
 ⌘ Ctrl Q         Lock screen
 ⌘ Shift Q        Log-out menu
+⌘ Ctrl Esc       Reboot
+⌘ Shift Esc      Shutdown
 ⌘ Tab  /  ⌘⇧Tab  Next / previous window
 ⌘ `              Toggle last window
 ⌘ H  /  ⌘⇧H      Hide window / peek hidden
