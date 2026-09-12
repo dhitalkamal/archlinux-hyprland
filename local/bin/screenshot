@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# macos-style screenshot dispatcher. wraps grim/slurp/wl-copy/hyprctl/wofi so the
+# hyprland binds can mirror macos cmd+shift+3/4/5 (and their ctrl clipboard twins).
+#
+# usage:
+#   screenshot full   file|clip     whole screen
+#   screenshot region file|clip     drag a region (esc cancels)
+#   screenshot window file|clip     click a window (snaps to window boxes)
+#   screenshot menu                 wofi picker, mirrors macos cmd+shift+5 toolbar
+#   screenshot record               toggle screen recording (delegates to screen-record)
+#
+# saved files land in ~/Pictures/Screenshots with macos-style names.
+set -euo pipefail
+
+save_dir="$HOME/Pictures/Screenshots"
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 && notify-send -t 2000 Screenshot "$1" || true
+}
+
+# grab the requested area into $2 (a temp png). $1 = full|region|window.
+# returns nonzero when the user cancels the selection (esc).
+grab() {
+    local mode="$1" out="$2" geom
+    case "$mode" in
+        full)
+            grim "$out" ;;
+        region)
+            geom="$(slurp)" || return 1
+            grim -g "$geom" "$out" ;;
+        window)
+            # feed mapped window boxes to slurp so a click snaps to a whole window
+            geom="$(hyprctl clients -j \
+                | jq -r '.[] | select(.mapped) | "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"' \
+                | slurp)" || return 1
+            grim -g "$geom" "$out" ;;
+        *)
+            echo "unknown capture mode: $mode" >&2; return 2 ;;
+    esac
+}
+
+# shoot MODE DEST. MODE = full|region|window, DEST = file|clip.
+shoot() {
+    local mode="$1" dest="$2" tmp
+    tmp="$(mktemp --suffix=.png)"
+    if ! grab "$mode" "$tmp"; then
+        rm -f "$tmp"
+        return 0    # cancelled, stay quiet like macos esc
+    fi
+    if [ ! -s "$tmp" ]; then
+        rm -f "$tmp"
+        notify "capture failed"
+        return 1
+    fi
+    if [ "$dest" = clip ]; then
+        wl-copy < "$tmp"
+        rm -f "$tmp"
+        notify "copied to clipboard"
+    else
+        mkdir -p "$save_dir"
+        local out
+        out="$save_dir/Screenshot $(date '+%Y-%m-%d at %H.%M.%S').png"
+        mv "$tmp" "$out"
+        # macos-style thumbnail: notification action opens the shot in swappy to annotate.
+        # needs a notifd that supports actions (swaync does); no-op if it does not.
+        local act
+        act="$(notify-send -t 5000 -A edit=Annotate Screenshot "saved to $out" 2>/dev/null || true)"
+        [ "$act" = edit ] && command -v swappy >/dev/null 2>&1 && swappy -f "$out"
+    fi
+}
+
+menu() {
+    local choice
+    choice="$(printf '%s\n' \
+        "Region -> file" \
+        "Region -> clipboard" \
+        "Window -> file" \
+        "Window -> clipboard" \
+        "Full screen -> file" \
+        "Full screen -> clipboard" \
+        "Record screen" \
+        | wofi --dmenu -i -p "Screenshot")" || exit 0
+    # let wofi fully close before slurp/grim grabs the screen
+    sleep 0.2
+    case "$choice" in
+        "Region -> file")           shoot region file ;;
+        "Region -> clipboard")      shoot region clip ;;
+        "Window -> file")           shoot window file ;;
+        "Window -> clipboard")      shoot window clip ;;
+        "Full screen -> file")      shoot full   file ;;
+        "Full screen -> clipboard") shoot full   clip ;;
+        "Record screen")            exec "$HOME/.local/bin/screen-record" ;;
+    esac
+}
+
+cmd="${1:-menu}"
+case "$cmd" in
+    full|region|window) shoot "$cmd" "${2:-file}" ;;
+    menu)               menu ;;
+    record)             exec "$HOME/.local/bin/screen-record" ;;
+    *)
+        echo "usage: screenshot {full|region|window} {file|clip} | menu | record" >&2
+        exit 2 ;;
+esac

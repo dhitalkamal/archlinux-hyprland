@@ -171,10 +171,14 @@ hl.bind(cmd .. " + grave",       hl.dsp.exec_cmd("hyprctl dispatch focuscurrento
 hl.bind(cmd .. " + H",           hl.dsp.exec_cmd("hyprctl dispatch movetoworkspacesilent special:hidden"))  -- ⌘H  → hide window
 hl.bind(cmd .. " + SHIFT + H",   hl.dsp.exec_cmd("hyprctl dispatch togglespecialworkspace hidden"))         -- ⌘⇧H → peek hidden
 
--- ── Screenshots (⌘⇧ + number, like macOS) ──
-hl.bind(cmd .. " + SHIFT + 3", hl.dsp.exec_cmd("mkdir -p " .. home .. "/Pictures && grim " .. home .. "/Pictures/screenshot-$(date +%s).png"))  -- whole screen -> file
-hl.bind(cmd .. " + SHIFT + 4", hl.dsp.exec_cmd("mkdir -p " .. home .. "/Pictures && grim -g \"$(slurp)\" " .. home .. "/Pictures/screenshot-$(date +%s).png && notify-send -t 1500 Screenshot 'region saved to ~/Pictures'"))  -- region -> save to file (macOS-style)
-hl.bind(cmd .. " + SHIFT + 5", hl.dsp.exec_cmd([[sh -c 'grim -g "$(slurp)" - | wl-copy && notify-send -t 1500 Screenshot "copied to clipboard"']]))  -- region -> clipboard
+-- Screenshots (macOS-style, via ~/.local/bin/screenshot)
+-- add CTRL to send to clipboard instead of saving a file, exactly like macOS.
+hl.bind(cmd .. " + SHIFT + 3",        hl.dsp.exec_cmd(home .. "/.local/bin/screenshot full file"))    -- whole screen -> file
+hl.bind(cmd .. " + CTRL + SHIFT + 3", hl.dsp.exec_cmd(home .. "/.local/bin/screenshot full clip"))    -- whole screen -> clipboard
+hl.bind(cmd .. " + SHIFT + 4",        hl.dsp.exec_cmd(home .. "/.local/bin/screenshot region file"))  -- region -> file
+hl.bind(cmd .. " + CTRL + SHIFT + 4", hl.dsp.exec_cmd(home .. "/.local/bin/screenshot region clip"))  -- region -> clipboard
+hl.bind(cmd .. " + SHIFT + 5",        hl.dsp.exec_cmd(home .. "/.local/bin/screenshot menu"))         -- screenshot menu (macOS cmd+shift+5 toolbar)
+hl.bind(cmd .. " + SHIFT + 6",        hl.dsp.exec_cmd(home .. "/.local/bin/screenshot window file"))  -- window -> file (macOS cmd+shift+4 then space)
 
 -- ── Window management: move focus (ALT + arrows / hjkl) ──
 hl.bind(wm .. " + left",  hl.dsp.focus({ direction = "left" }))
@@ -240,8 +244,8 @@ hl.bind(cmd .. " + CTRL + Space", hl.dsp.exec_cmd(home .. "/.local/bin/emoji-pic
 hl.bind(wm  .. " + Print",        hl.dsp.exec_cmd(home .. "/.local/bin/screen-record"))  -- Alt+Print → screen recording toggle
 
 -- ── Screenshots (Print key, kept for muscle memory) ──
-hl.bind("Print",         hl.dsp.exec_cmd("mkdir -p " .. home .. "/Pictures && grim -g \"$(slurp)\" " .. home .. "/Pictures/screenshot-$(date +%s).png && notify-send -t 1500 Screenshot 'region saved to ~/Pictures'"))
-hl.bind("SHIFT + Print", hl.dsp.exec_cmd("mkdir -p " .. home .. "/Pictures && grim " .. home .. "/Pictures/screenshot-$(date +%s).png"))
+hl.bind("Print",         hl.dsp.exec_cmd(home .. "/.local/bin/screenshot region file"))
+hl.bind("SHIFT + Print", hl.dsp.exec_cmd(home .. "/.local/bin/screenshot full file"))
 
 -- ── Media / brightness ──
 hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),      { locked = true })
