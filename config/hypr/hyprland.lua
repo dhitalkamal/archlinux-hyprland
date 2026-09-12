@@ -173,7 +173,7 @@ hl.bind(cmd .. " + SHIFT + H",   hl.dsp.exec_cmd("hyprctl dispatch togglespecial
 
 -- ── Screenshots (⌘⇧ + number, like macOS) ──
 hl.bind(cmd .. " + SHIFT + 3", hl.dsp.exec_cmd("mkdir -p " .. home .. "/Pictures && grim " .. home .. "/Pictures/screenshot-$(date +%s).png"))  -- whole screen -> file
-hl.bind(cmd .. " + SHIFT + 4", hl.dsp.exec_cmd([[grim -g "$(slurp)" - | swappy -f -]]))  -- region -> annotate (swappy)
+hl.bind(cmd .. " + SHIFT + 4", hl.dsp.exec_cmd("mkdir -p " .. home .. "/Pictures && grim -g \"$(slurp)\" " .. home .. "/Pictures/screenshot-$(date +%s).png && notify-send -t 1500 Screenshot 'region saved to ~/Pictures'"))  -- region -> save to file (macOS-style)
 hl.bind(cmd .. " + SHIFT + 5", hl.dsp.exec_cmd([[sh -c 'grim -g "$(slurp)" - | wl-copy && notify-send -t 1500 Screenshot "copied to clipboard"']]))  -- region -> clipboard
 
 -- ── Window management: move focus (ALT + arrows / hjkl) ──
@@ -240,7 +240,7 @@ hl.bind(cmd .. " + CTRL + Space", hl.dsp.exec_cmd(home .. "/.local/bin/emoji-pic
 hl.bind(wm  .. " + Print",        hl.dsp.exec_cmd(home .. "/.local/bin/screen-record"))  -- Alt+Print → screen recording toggle
 
 -- ── Screenshots (Print key, kept for muscle memory) ──
-hl.bind("Print",         hl.dsp.exec_cmd([[grim -g "$(slurp)" - | swappy -f -]]))
+hl.bind("Print",         hl.dsp.exec_cmd("mkdir -p " .. home .. "/Pictures && grim -g \"$(slurp)\" " .. home .. "/Pictures/screenshot-$(date +%s).png && notify-send -t 1500 Screenshot 'region saved to ~/Pictures'"))
 hl.bind("SHIFT + Print", hl.dsp.exec_cmd("mkdir -p " .. home .. "/Pictures && grim " .. home .. "/Pictures/screenshot-$(date +%s).png"))
 
 -- ── Media / brightness ──
