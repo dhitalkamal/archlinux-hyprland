@@ -9,7 +9,7 @@
     "margin-left": 10,
     "margin-right": 10,
 
-    "modules-left":   ["custom/menu", "hyprland/workspaces", "hyprland/window"],
+    "modules-left":   ["custom/menu", "ext/workspaces", "hyprland/window"],
 
     "hyprland/window": {
         "format": "{title}",
@@ -83,10 +83,10 @@
         "on-click": "waypaper"
     },
 
-    "hyprland/workspaces": {
-        "format": "{id}",
+    "ext/workspaces": {
+        "format": "{name}",
         "on-click": "activate",
-        "sort-by-number": true,
+        "sort-by": "number",
         "on-scroll-up": "hyprctl dispatch \"hl.dsp.focus({workspace='e+1'})\"",
         "on-scroll-down": "hyprctl dispatch \"hl.dsp.focus({workspace='e-1'})\""
     },

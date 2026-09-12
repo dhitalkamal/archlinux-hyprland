@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
-# dynamic-workspaces: macos-like "spaces" for hyprland.
+# dynamic-workspaces: macos-like contiguous "spaces" for hyprland.
 #
-# keeps your occupied workspaces contiguous (1,2,3,...) and follows you off an
-# emptied one, the way macos slides spaces down when one disappears.
+# keeps your occupied workspaces numbered 1..N with no gaps, WITHOUT yanking you
+# around:
+#   - when you close the last app on the workspace you are on, nothing happens.
+#     you stay on the now-empty workspace. it is not removed.
+#   - when you switch away from that empty workspace, hyprland destroys it on its
+#     own (its default). that leaves a gap, so we then renumber the remaining
+#     occupied workspaces down to 1..N.
 #
-# on any change that can open or close a gap (window opened/closed/moved, a
-# workspace destroyed) it:
-#   1. if the workspace you are on just went empty, follows you to the nearest
-#      occupied one first (so hyprland frees that now-dead id).
-#   2. renumbers the occupied workspaces down to 1..N with no gaps, using
-#      hl.dsp.workspace.change_id so an entire workspace (all its windows and
-#      layout) is renumbered in one shot and your focus rides along.
+# in short: renumber only when the workspace you are ON has windows. if you are
+# sitting on an empty workspace we leave everything alone (so your empty desktop
+# survives until you choose to leave it). because hyprland destroys every OTHER
+# empty workspace immediately, "active has windows" means every existing normal
+# workspace has windows, so renumbering to 1..N is always collision-free.
 #
 # NOTE: this hyprland (0.56, lua config) rejects plain `hyprctl dispatch <name>`
-# (it evaluates the argument as lua), so every dispatch below uses the hl.dsp.*
-# form. verified: plain `dispatch workspace N` errors, `hl.dsp.focus({...})` is ok.
+# (it evaluates the argument as lua), so dispatch uses the hl.dsp.* form.
+# renumbering uses hl.dsp.workspace.change_id, which carries all of a workspace's
+# windows and keeps focus on it. change_id into an already-used id MERGES, so we
+# only ever renumber to a free (lower) id.
 #
-# the event loop is DEBOUNCED: renumbering fires its own events, so we coalesce a
-# burst and reconcile once after a short quiet period. this prevents a self-cascade
-# (change_id into an already-used id would MERGE workspaces).
-#
-# limits: only normal (positive-id) workspaces; special overlays (scratchterm,
-# hidden) are never touched. switching to an empty workspace on purpose does not
-# trigger anything, it only reacts when windows actually open/close/move.
+# the event loop is DEBOUNCED: our own change_id fires events, so we coalesce a
+# burst and reconcile once after a short quiet period.
 set -euo pipefail
 
 # single instance per session
@@ -40,27 +40,21 @@ occupied() {
 }
 
 reconcile() {
-    local aw active awwin occ tgt idx oldws
+    local aw active awwin occ idx oldws
 
-    # 1. if we are sitting on a now-empty normal workspace, follow to the nearest
-    #    occupied one first. that lets hyprland destroy the empty active ws and
-    #    free its id, so the renumber below cannot collide (collision == merge).
     aw="$(hyprctl activeworkspace -j)"
     active="$(printf '%s' "$aw" | jq -r '.id')"
     awwin="$(printf '%s' "$aw" | jq -r '.windows')"
-    if [[ "$active" =~ ^[0-9]+$ ]] && [ "$awwin" = 0 ]; then
-        tgt="$(occupied | jq -r --argjson a "$active" '
-            if length == 0 then empty
-            else (sort_by([ (. - $a | fabs), . ]) | .[0]) end')"
-        if [ -n "$tgt" ]; then
-            hyprctl dispatch "hl.dsp.focus({workspace=$tgt})" >/dev/null 2>&1
-            sleep 0.05
-        fi
-    fi
 
-    # 2. renumber occupied workspaces to 1..N (ascending order is collision-free:
-    #    each target slot is either already correct or was vacated in an earlier
-    #    step). change_id carries all windows and keeps your focus on the ws.
+    # skip special/overlay workspaces (negative ids)
+    case "$active" in ''|*[!0-9]*) return 0 ;; esac
+    # if you are sitting on an empty workspace, leave everything alone: your empty
+    # desktop stays until YOU switch away (then hyprland removes it and the
+    # destroyworkspace event brings us back here with an occupied active ws).
+    [ "$awwin" -gt 0 ] 2>/dev/null || return 0
+
+    # active has windows => every existing normal workspace has windows. renumber
+    # them to 1..N (ascending is collision-free). change_id keeps you on your ws.
     occ="$(occupied)"
     [ "$(printf '%s' "$occ" | jq 'length')" -gt 0 ] || return 0
     while read -r idx oldws; do
@@ -82,7 +76,6 @@ while true; do
                 pending=1 ;;
         esac
     elif [ "$rc" -gt 128 ]; then
-        # quiet period: if something changed, reconcile exactly once
         if [ "$pending" = 1 ]; then pending=0; reconcile; fi
     else
         break   # EOF: the event socket closed
