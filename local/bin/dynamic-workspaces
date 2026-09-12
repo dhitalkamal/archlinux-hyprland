@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# dynamic-workspaces: macos-like "spaces" follow behaviour for hyprland.
+#
+# when the workspace you are CURRENTLY on becomes empty (you closed or moved its
+# last window), jump to the nearest occupied workspace, the way macos drops you
+# onto an adjacent space when one disappears. hyprland destroys the empty
+# workspace on its own, this just makes sure you never sit staring at a dead one.
+#
+# deliberate limits:
+#  - it does NOT fire when you switch to an empty workspace on purpose, so you can
+#    still hop to an empty space and open something there. it only reacts when a
+#    window LEAVES (close/move).
+#  - it does NOT renumber workspaces to close gaps. hyprland cannot renumber
+#    without moving every window, so gaps like 1,2,4 can still exist.
+#
+# runs as a background daemon, started once from hyprland autostart.
+set -euo pipefail
+
+# single instance per session
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/dynamic-workspaces.lock"
+flock -n 9 || exit 0
+
+sig="${HYPRLAND_INSTANCE_SIGNATURE:-}"
+[ -n "$sig" ] || { echo "dynamic-workspaces: not in a hyprland session" >&2; exit 1; }
+sock="$XDG_RUNTIME_DIR/hypr/$sig/.socket2.sock"
+[ -S "$sock" ] || { echo "dynamic-workspaces: event socket missing: $sock" >&2; exit 1; }
+
+# nearest occupied normal workspace to $1 (closest id, ties prefer lower).
+# prints the target id, or nothing when no other occupied workspace exists.
+nearest_occupied() {
+    hyprctl workspaces -j | jq -r --argjson cur "$1" '
+        [ .[] | select(.id > 0 and .windows > 0) | .id ]
+        | sort_by([ (. - $cur | fabs), . ])
+        | .[0] // empty'
+}
+
+# if the active normal workspace is empty, follow to the nearest occupied one.
+maybe_follow() {
+    local aw active windows target
+    aw="$(hyprctl activeworkspace -j)"
+    active="$(printf '%s' "$aw" | jq -r '.id')"
+    windows="$(printf '%s' "$aw" | jq -r '.windows')"
+    # only act on normal (positive integer) workspaces; skip special overlays
+    case "$active" in ''|*[!0-9]*) return 0 ;; esac
+    [ "$windows" = 0 ] || return 0
+    target="$(nearest_occupied "$active")"
+    [ -n "$target" ] && [ "$target" != "$active" ] \
+        && hyprctl dispatch "hl.dsp.focus({workspace=$target})" >/dev/null 2>&1
+    return 0
+}
+
+# listen to the event stream; only react to events that can empty the active ws.
+socat -U - "UNIX-CONNECT:$sock" | while read -r line; do
+    case "$line" in
+        closewindow\>\>*|movewindow\>\>*|movewindowv2\>\>*)
+            sleep 0.05    # let hyprland settle the window/workspace state first
+            maybe_follow ;;
+    esac
+done

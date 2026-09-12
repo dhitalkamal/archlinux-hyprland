@@ -138,6 +138,7 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("wl-paste --type text --watch cliphist store")
     hl.exec_cmd("wl-paste --type image --watch cliphist store")
     hl.exec_cmd(home .. "/.local/bin/wall-restore")   -- restore last-chosen wallpaper (image or video)
+    hl.exec_cmd(home .. "/.local/bin/dynamic-workspaces")  -- macos-like dynamic spaces: follow off an emptied workspace
 end)
 
 -- ---- keybindings  (macOS-style) -------------------------------------------
@@ -219,6 +220,11 @@ end
 for i = 1, 5 do
     hl.bind(cmd .. " + " .. i, hl.dsp.focus({ workspace = i }))
 end
+
+-- macOS-style: SUPER + Left/Right hop to the previous/next existing workspace
+-- (e-1/e+1 skip gaps, so they only land on workspaces that actually exist)
+hl.bind(cmd .. " + left",  hl.dsp.focus({ workspace = "e-1" }))
+hl.bind(cmd .. " + right", hl.dsp.focus({ workspace = "e+1" }))
 
 -- ── Scroll + drag (ALT) ──
 hl.bind(wm .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))

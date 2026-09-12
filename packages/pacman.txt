@@ -56,6 +56,10 @@ wf-recorder
 wl-clipboard
 cliphist
 
+# --- Helper-script deps (screenshot tool, dynamic-workspaces daemon) ---
+jq
+socat
+
 # --- Media / brightness / power ---
 playerctl
 brightnessctl
