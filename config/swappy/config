@@ -1,0 +1,14 @@
+[Default]
+# where annotated shots are saved (Ctrl+S). matches the screenshot tool's dir.
+save_dir=$HOME/Pictures/Screenshots
+save_filename_format=Screenshot %Y-%m-%d at %H.%M.%S.png
+# show the paint toolbar on startup so brush/text/shapes are actually reachable.
+# without this the panel is hidden and editing looks like it does nothing.
+show_panel=true
+# close the window after save/copy so there is clear feedback something happened.
+early_exit=true
+paint_mode=brush
+line_size=5
+text_size=20
+text_font=sans-serif
+fill_shape=false
