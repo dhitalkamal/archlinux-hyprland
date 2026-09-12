@@ -20,6 +20,7 @@ cat <<'EOF' | wofi --dmenu -i -p "Keybindings" --width 660 --height 600 >/dev/nu
 ⌘ Ctrl Shift 4   Screenshot region -> clipboard
 ⌘ Shift 5        Screenshot menu (full/region/window, record)
 ⌘ Shift 6        Screenshot window -> file
+⌘ Shift 7        OCR region text -> clipboard
 ⌘ /              This cheatsheet
 ⌘ Ctrl Space     Emoji picker
 ──────────  In-app (via keyd)  ──────────

@@ -180,6 +180,7 @@ hl.bind(cmd .. " + SHIFT + 4",        hl.dsp.exec_cmd(home .. "/.local/bin/scree
 hl.bind(cmd .. " + CTRL + SHIFT + 4", hl.dsp.exec_cmd(home .. "/.local/bin/screenshot region clip"))  -- region -> clipboard
 hl.bind(cmd .. " + SHIFT + 5",        hl.dsp.exec_cmd(home .. "/.local/bin/screenshot menu"))         -- screenshot menu (macOS cmd+shift+5 toolbar)
 hl.bind(cmd .. " + SHIFT + 6",        hl.dsp.exec_cmd(home .. "/.local/bin/screenshot window file"))  -- window -> file (macOS cmd+shift+4 then space)
+hl.bind(cmd .. " + SHIFT + 7",        hl.dsp.exec_cmd(home .. "/.local/bin/screen-ocr"))             -- OCR region text -> clipboard
 
 -- ── Window management: move focus (ALT + arrows / hjkl) ──
 hl.bind(wm .. " + left",  hl.dsp.focus({ direction = "left" }))

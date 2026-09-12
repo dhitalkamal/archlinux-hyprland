@@ -56,9 +56,15 @@ wf-recorder
 wl-clipboard
 cliphist
 
-# --- Helper-script deps (screenshot tool, dynamic-workspaces daemon) ---
+# --- Helper-script deps (screenshot tool, dynamic-workspaces daemon, screen-ocr) ---
 jq
 socat
+tesseract
+tesseract-data-eng
+
+# --- Productivity CLI/TUI ---
+lazydocker
+glow
 
 # --- Media / brightness / power ---
 playerctl

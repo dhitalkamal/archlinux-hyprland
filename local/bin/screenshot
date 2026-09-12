@@ -78,6 +78,7 @@ menu() {
         "Window -> clipboard" \
         "Full screen -> file" \
         "Full screen -> clipboard" \
+        "Text (OCR) -> clipboard" \
         "Record screen" \
         | wofi --dmenu -i -p "Screenshot")" || exit 0
     # let wofi fully close before slurp/grim grabs the screen
@@ -89,6 +90,7 @@ menu() {
         "Window -> clipboard")      shoot window clip ;;
         "Full screen -> file")      shoot full   file ;;
         "Full screen -> clipboard") shoot full   clip ;;
+        "Text (OCR) -> clipboard")  exec "$HOME/.local/bin/screen-ocr" ;;
         "Record screen")            exec "$HOME/.local/bin/screen-record" ;;
     esac
 }
