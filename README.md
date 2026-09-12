@@ -122,6 +122,17 @@ design, but flagged here so you can revert anything you don't want:
   integration (iwgtk is iwd-only).
 - **ALT is the window-management modifier**, freed up from SUPER specifically
   so keyd's ⌘-remap and Hyprland's window binds don't collide.
+- **macOS-style dynamic workspaces.** `local/bin/dynamic-workspaces` keeps your
+  occupied workspaces numbered 1..N with no gaps: close the last app on a desktop
+  and it stays until you switch away, then Hyprland removes it and the rest
+  renumber to stay contiguous. Started from `hyprland.lua` autostart.
+- **Screenshots go through `local/bin/screenshot`** (grim/slurp/swappy),
+  mirroring macOS: ⌘Shift 3/4 save full/region to `~/Pictures/Screenshots`,
+  add Ctrl to copy to clipboard, ⌘Shift 5 opens a menu, ⌘Shift 6 grabs a window.
+- **The bar uses waybar's `ext/workspaces` module**, not `hyprland/workspaces`,
+  so clicking a workspace number activates it over the wayland protocol. This is
+  required because this Lua-config Hyprland rejects plain `hyprctl dispatch`
+  (all dispatches must use the `hl.dsp.*` form).
 
 ## Keybind highlights
 
@@ -141,7 +152,10 @@ bound to **⌘/** (`keybind-help`, backed by wofi). Some of the notable ones:
 | ALT + hjkl / arrows | Focus window in direction |
 | ALT + SHIFT + hjkl | Move window in direction |
 | ALT + F | Fullscreen |
-| ⌘⇧3 / ⌘⇧4 / ⌘⇧5 | Screenshot: full / region-to-editor / region-to-clipboard |
+| ⌘ Shift 3 / ⌘ Shift 4 | Screenshot full / region -> file (add Ctrl to copy to clipboard instead) |
+| ⌘ Shift 5 | Screenshot menu (full / region / window, plus screen record) |
+| ⌘ Shift 6 | Screenshot a window -> file |
+| ⌘ Left / ⌘ Right | Previous / next desktop |
 
 ## Post-install
 

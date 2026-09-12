@@ -13,9 +13,13 @@ cat <<'EOF' | wofi --dmenu -i -p "Keybindings" --width 660 --height 600 >/dev/nu
 ⌘ `              Toggle last window
 ⌘ H  /  ⌘⇧H      Hide window / peek hidden
 ⌘ 1 … 5          Switch desktop
-⌘ Shift 3        Screenshot → file
-⌘ Shift 4        Screenshot region → annotate
-⌘ Shift 5        Screenshot region → clipboard
+⌘ Left / Right   Previous / next desktop
+⌘ Shift 3        Screenshot full -> file
+⌘ Ctrl Shift 3   Screenshot full -> clipboard
+⌘ Shift 4        Screenshot region -> file
+⌘ Ctrl Shift 4   Screenshot region -> clipboard
+⌘ Shift 5        Screenshot menu (full/region/window, record)
+⌘ Shift 6        Screenshot window -> file
 ⌘ /              This cheatsheet
 ⌘ Ctrl Space     Emoji picker
 ──────────  In-app (via keyd)  ──────────
