@@ -166,11 +166,11 @@ hl.bind(cmd .. " + SHIFT + Q",   hl.dsp.exec_cmd("wlogout -b 5 -p layer-shell"))
 hl.bind(cmd .. " + D",           hl.dsp.exec_cmd("qs ipc call cc toggle"))        -- ⌘D   → Control Center
 
 -- ── App / window switching (⌘) ──
-hl.bind(cmd .. " + Tab",         hl.dsp.exec_cmd("hyprctl dispatch cyclenext"))          -- ⌘Tab   → next window
-hl.bind(cmd .. " + SHIFT + Tab", hl.dsp.exec_cmd("hyprctl dispatch cyclenext prev"))     -- ⌘⇧Tab → previous window
-hl.bind(cmd .. " + grave",       hl.dsp.exec_cmd("hyprctl dispatch focuscurrentorlast")) -- ⌘`     → toggle last window
-hl.bind(cmd .. " + H",           hl.dsp.exec_cmd("hyprctl dispatch movetoworkspacesilent special:hidden"))  -- ⌘H  → hide window
-hl.bind(cmd .. " + SHIFT + H",   hl.dsp.exec_cmd("hyprctl dispatch togglespecialworkspace hidden"))         -- ⌘⇧H → peek hidden
+hl.bind(cmd .. " + Tab",         hl.dsp.window.cycle_next())                -- cmd+Tab       -> next window
+hl.bind(cmd .. " + SHIFT + Tab", hl.dsp.window.cycle_next({ prev = true })) -- cmd+shift+Tab -> previous window
+hl.bind(cmd .. " + grave",       hl.dsp.exec_raw("focuscurrentorlast"))     -- cmd+grave     -> toggle last window
+hl.bind(cmd .. " + H",           hl.dsp.window.move({ workspace = "special:hidden", silent = true }))  -- cmd+H       -> hide window
+hl.bind(cmd .. " + SHIFT + H",   hl.dsp.workspace.toggle_special("hidden"))                            -- cmd+shift+H -> peek hidden
 
 -- Screenshots (macOS-style, via ~/.local/bin/screenshot)
 -- add CTRL to send to clipboard instead of saving a file, exactly like macOS.
@@ -192,14 +192,14 @@ hl.bind(wm .. " + K",     hl.dsp.focus({ direction = "up" }))
 hl.bind(wm .. " + L",     hl.dsp.focus({ direction = "right" }))
 
 -- ── Move windows (ALT + SHIFT + arrows / hjkl) ──
-hl.bind(wm .. " + SHIFT + left",  hl.dsp.exec_cmd("hyprctl dispatch movewindow l"))
-hl.bind(wm .. " + SHIFT + right", hl.dsp.exec_cmd("hyprctl dispatch movewindow r"))
-hl.bind(wm .. " + SHIFT + up",    hl.dsp.exec_cmd("hyprctl dispatch movewindow u"))
-hl.bind(wm .. " + SHIFT + down",  hl.dsp.exec_cmd("hyprctl dispatch movewindow d"))
-hl.bind(wm .. " + SHIFT + H",     hl.dsp.exec_cmd("hyprctl dispatch movewindow l"))
-hl.bind(wm .. " + SHIFT + J",     hl.dsp.exec_cmd("hyprctl dispatch movewindow d"))
-hl.bind(wm .. " + SHIFT + K",     hl.dsp.exec_cmd("hyprctl dispatch movewindow u"))
-hl.bind(wm .. " + SHIFT + L",     hl.dsp.exec_cmd("hyprctl dispatch movewindow r"))
+hl.bind(wm .. " + SHIFT + left",  hl.dsp.window.move({ direction = "l" }))
+hl.bind(wm .. " + SHIFT + right", hl.dsp.window.move({ direction = "r" }))
+hl.bind(wm .. " + SHIFT + up",    hl.dsp.window.move({ direction = "u" }))
+hl.bind(wm .. " + SHIFT + down",  hl.dsp.window.move({ direction = "d" }))
+hl.bind(wm .. " + SHIFT + H",     hl.dsp.window.move({ direction = "l" }))
+hl.bind(wm .. " + SHIFT + J",     hl.dsp.window.move({ direction = "d" }))
+hl.bind(wm .. " + SHIFT + K",     hl.dsp.window.move({ direction = "u" }))
+hl.bind(wm .. " + SHIFT + L",     hl.dsp.window.move({ direction = "r" }))
 
 -- ── Window state (ALT) ──
 hl.bind(wm .. " + F",         hl.dsp.window.fullscreen())               -- Alt+F  → fullscreen
