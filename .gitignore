@@ -1,4 +1,8 @@
-# Machine-specific state, not portable config — regenerated at runtime.
+# Machine-specific state, not portable config - regenerated at runtime.
 config/hypr/current-wallpaper
 *.bak
 .backup-*
+
+# personal/local-only tools - mixes in work accounts and machine detail,
+# deliberately kept out of this public repo (see tools/system-inventory note)
+tools/
