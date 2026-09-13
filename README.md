@@ -12,31 +12,46 @@ installs every package, links every config, and wires up the system-level bits
 ## Screenshots
 
 Real screenshots from this exact config, not mockups. Every accent color
-on screen (waybar, launcher, control center) is extracted from the current
+on screen (bar, menus, terminal, lock screen) is extracted from the current
 wallpaper by `wall-theme` - change the wallpaper and the whole desktop
 recolors to match.
 
-Clean desktop:
+A themed terminal (kitty) with the floating-island bar over the wallpaper:
 
-![Desktop](assets/screenshots/01-desktop.png)
+![Terminal](assets/screenshots/terminal.png)
 
-The floating-island waybar - workspace pills on the left, centered system
-info and clock, user and system tray on the right:
+App launcher (Cmd+Space) and the Launchpad-style app grid (Alt+A):
 
-![Waybar](assets/screenshots/02-waybar.png)
+![Launcher](assets/screenshots/launcher.png)
 
-The wofi launcher (Cmd+Space) and the wallpaper-themed keybind cheatsheet
-(Cmd+/), both frosted over the wallpaper:
+![Launchpad app grid](assets/screenshots/launchpad.png)
 
-![Launcher](assets/screenshots/04-launcher.png)
+Dropdown quake terminal (Cmd+Shift+Return):
 
-![Keybind cheatsheet](assets/screenshots/05-cheatsheet.png)
+![Dropdown terminal](assets/screenshots/dropterm.png)
 
-The custom quickshell control center (Cmd+D) - volume and brightness
-sliders, wifi/bluetooth/now-playing, and quick toggles for caffeine, night
-light, do-not-disturb, screenshots, lock, and power:
+Custom quickshell control center (Cmd+D) - volume and brightness sliders,
+wifi/bluetooth/now-playing, and quick toggles - plus the notification
+center (Alt+N):
 
-![Control center](assets/screenshots/03-control-center.png)
+![Control center](assets/screenshots/control-center.png)
+
+![Notification center](assets/screenshots/notifications.png)
+
+Settings hub (Alt+I), emoji picker (Cmd+Ctrl+Space), and color picker
+(Alt+Shift+P):
+
+![Settings hub](assets/screenshots/settings-hub.png)
+
+![Emoji picker](assets/screenshots/emoji-picker.png)
+
+![Color picker](assets/screenshots/color-picker.png)
+
+Logout menu (Cmd+Shift+Q) and lock screen (Cmd+Ctrl+Q):
+
+![Logout menu](assets/screenshots/logout.png)
+
+![Lock screen](assets/screenshots/lockscreen.png)
 
 ## Quick start
 
