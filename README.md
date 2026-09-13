@@ -9,6 +9,35 @@ This isn't a minimal "here's my hyprland.conf" dotfiles dump — `install.sh`
 installs every package, links every config, and wires up the system-level bits
 (SDDM, keyd, optionally the network stack) that a plain symlink script can't reach.
 
+## Screenshots
+
+Real screenshots from this exact config, not mockups. Every accent color
+on screen (waybar, launcher, control center) is extracted from the current
+wallpaper by `wall-theme` - change the wallpaper and the whole desktop
+recolors to match.
+
+Clean desktop:
+
+![Desktop](assets/screenshots/01-desktop.png)
+
+The floating-island waybar - workspace pills on the left, centered system
+info and clock, user and system tray on the right:
+
+![Waybar](assets/screenshots/02-waybar.png)
+
+The wofi launcher (Cmd+Space) and the wallpaper-themed keybind cheatsheet
+(Cmd+/), both frosted over the wallpaper:
+
+![Launcher](assets/screenshots/04-launcher.png)
+
+![Keybind cheatsheet](assets/screenshots/05-cheatsheet.png)
+
+The custom quickshell control center (Cmd+D) - volume and brightness
+sliders, wifi/bluetooth/now-playing, and quick toggles for caffeine, night
+light, do-not-disturb, screenshots, lock, and power:
+
+<img src="assets/screenshots/03-control-center.png" alt="Control center" width="320">
+
 ## Quick start
 
 On a fresh Arch install (with a normal, non-root user that has `sudo`):
