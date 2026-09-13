@@ -36,7 +36,7 @@ The custom quickshell control center (Cmd+D) - volume and brightness
 sliders, wifi/bluetooth/now-playing, and quick toggles for caffeine, night
 light, do-not-disturb, screenshots, lock, and power:
 
-<img src="assets/screenshots/03-control-center.png" alt="Control center" width="320">
+![Control center](assets/screenshots/03-control-center.png)
 
 ## Quick start
 
