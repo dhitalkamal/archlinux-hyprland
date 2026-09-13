@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# dynamic-workspaces: macos-like contiguous "spaces" for hyprland.
+#
+# keeps your occupied workspaces numbered 1..N with no gaps, WITHOUT yanking you
+# around:
+#   - when you close the last app on the workspace you are on, nothing happens.
+#     you stay on the now-empty workspace. it is not removed.
+#   - when you switch away from that empty workspace, hyprland destroys it on its
+#     own (its default). that leaves a gap, so we then renumber the remaining
+#     occupied workspaces down to 1..N.
+#
+# in short: renumber only when the workspace you are ON has windows. if you are
+# sitting on an empty workspace we leave everything alone (so your empty desktop
+# survives until you choose to leave it). because hyprland destroys every OTHER
+# empty workspace immediately, "active has windows" means every existing normal
+# workspace has windows, so renumbering to 1..N is always collision-free.
+#
+# NOTE: this hyprland (0.56, lua config) rejects plain `hyprctl dispatch <name>`
+# (it evaluates the argument as lua), so dispatch uses the hl.dsp.* form.
+# renumbering uses hl.dsp.workspace.change_id, which carries all of a workspace's
+# windows and keeps focus on it. change_id into an already-used id MERGES, so we
+# only ever renumber to a free (lower) id.
+#
+# the event loop is DEBOUNCED: our own change_id fires events, so we coalesce a
+# burst and reconcile once after a short quiet period.
+set -euo pipefail
+
+# single instance per session
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/dynamic-workspaces.lock"
+flock -n 9 || exit 0
+
+sig="${HYPRLAND_INSTANCE_SIGNATURE:-}"
+[ -n "$sig" ] || { echo "dynamic-workspaces: not in a hyprland session" >&2; exit 1; }
+sock="$XDG_RUNTIME_DIR/hypr/$sig/.socket2.sock"
+[ -S "$sock" ] || { echo "dynamic-workspaces: event socket missing: $sock" >&2; exit 1; }
+
+# json array of occupied normal workspace ids, sorted ascending. e.g. [1,2,4]
+occupied() {
+    hyprctl workspaces -j | jq -c '[ .[] | select(.id > 0 and .windows > 0) | .id ] | sort'
+}
+
+reconcile() {
+    local aw active awwin occ idx oldws
+
+    aw="$(hyprctl activeworkspace -j)"
+    active="$(printf '%s' "$aw" | jq -r '.id')"
+    awwin="$(printf '%s' "$aw" | jq -r '.windows')"
+
+    # skip special/overlay workspaces (negative ids)
+    case "$active" in ''|*[!0-9]*) return 0 ;; esac
+    # if you are sitting on an empty workspace, leave everything alone: your empty
+    # desktop stays until YOU switch away (then hyprland removes it and the
+    # destroyworkspace event brings us back here with an occupied active ws).
+    [ "$awwin" -gt 0 ] 2>/dev/null || return 0
+
+    # active has windows => every existing normal workspace has windows. renumber
+    # them to 1..N (ascending is collision-free). change_id keeps you on your ws.
+    occ="$(occupied)"
+    [ "$(printf '%s' "$occ" | jq 'length')" -gt 0 ] || return 0
+    while read -r idx oldws; do
+        [ "$oldws" = "$idx" ] && continue
+        hyprctl dispatch "hl.dsp.workspace.change_id({workspace=$oldws,id=$idx})" >/dev/null 2>&1
+    done < <(printf '%s' "$occ" | jq -r 'to_entries[] | "\(.key + 1) \(.value)"')
+    return 0
+}
+
+# debounced event loop. process substitution keeps the loop in this shell so the
+# `pending` flag persists and there is a single process. read -t distinguishes:
+# rc 0 = got a line, rc > 128 = quiet timeout, rc 1 = EOF (socat died -> exit).
+pending=0
+while true; do
+    rc=0; IFS= read -r -t 0.2 line || rc=$?
+    if [ "$rc" = 0 ]; then
+        case "$line" in
+            openwindow\>\>*|closewindow\>\>*|movewindow\>\>*|movewindowv2\>\>*|destroyworkspace\>\>*)
+                pending=1 ;;
+        esac
+    elif [ "$rc" -gt 128 ]; then
+        if [ "$pending" = 1 ]; then pending=0; reconcile; fi
+    else
+        break   # EOF: the event socket closed
+    fi
+done < <(socat -U - "UNIX-CONNECT:$sock")

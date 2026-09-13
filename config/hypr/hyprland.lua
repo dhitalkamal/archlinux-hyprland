@@ -27,8 +27,8 @@ end
 
 -- ---- programs -------------------------------------------------------------
 local terminal    = "kitty"
-local fileManager = "thunar"
-local menu        = "wofi --show drun"
+-- toggle: second super+space kills the open wofi instead of stacking a new one
+local menu        = "pkill -x wofi || wofi --show drun"
 
 -- ---- monitors -------------------------------------------------------------
 -- eDP-1: native 1920x1080@60, scale 1 (true 1:1 pixels, full 1080p workspace)
@@ -138,6 +138,7 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("wl-paste --type text --watch cliphist store")
     hl.exec_cmd("wl-paste --type image --watch cliphist store")
     hl.exec_cmd(home .. "/.local/bin/wall-restore")   -- restore last-chosen wallpaper (image or video)
+    hl.exec_cmd(home .. "/.local/bin/dynamic-workspaces")  -- macos-like dynamic spaces: follow off an emptied workspace
 end)
 
 -- ---- keybindings  (macOS-style) -------------------------------------------
@@ -155,24 +156,31 @@ local wm  = "ALT"
 -- ── System / launching (⌘) ──
 hl.bind(cmd .. " + Space",       hl.dsp.exec_cmd(menu))                 -- ⌘Space  → Spotlight (launcher)
 hl.bind(cmd .. " + Return",      hl.dsp.exec_cmd(terminal))             -- ⌘Return → terminal
-hl.bind(cmd .. " + SHIFT + Return", hl.dsp.exec_cmd(home .. "/.local/bin/dropterm"))  -- ⌘⇧Return → dropdown terminal
-hl.bind(cmd .. " + E",           hl.dsp.exec_cmd(fileManager))          -- ⌘E      → file manager
+hl.bind(cmd .. " + SHIFT + Return", hl.dsp.exec_cmd(home .. "/.local/bin/dropterm"))  -- SUPER+SHIFT+Return: dropdown terminal
+hl.bind(cmd .. " + E",           hl.dsp.exec_cmd(terminal .. " yazi"))  -- SUPER+E -> file manager (yazi in kitty)
 hl.bind(cmd .. " + Q",           hl.dsp.window.close())                 -- ⌘Q      → quit / close window
 hl.bind(cmd .. " + CTRL + Q",    hl.dsp.exec_cmd("hyprlock"))           -- ⌘⌃Q    → lock screen
+hl.bind(cmd .. " + CTRL + Escape",  hl.dsp.exec_cmd([[bash -c 'ans=$(echo -e "Cancel\nReboot" | wofi --dmenu -p "Confirm reboot"); [ "$ans" = Reboot ] && systemctl reboot']]))          -- cmd+ctrl+esc: reboot (confirm)
+hl.bind(cmd .. " + SHIFT + Escape", hl.dsp.exec_cmd([[bash -c 'ans=$(echo -e "Cancel\nShut Down" | wofi --dmenu -p "Confirm shutdown"); [ "$ans" = "Shut Down" ] && systemctl poweroff']]))        -- cmd+shift+esc: shutdown (confirm)
 hl.bind(cmd .. " + SHIFT + Q",   hl.dsp.exec_cmd("wlogout -b 5 -p layer-shell"))  -- ⌘⇧Q → log-out menu
 hl.bind(cmd .. " + D",           hl.dsp.exec_cmd("qs ipc call cc toggle"))        -- ⌘D   → Control Center
 
 -- ── App / window switching (⌘) ──
-hl.bind(cmd .. " + Tab",         hl.dsp.exec_cmd("hyprctl dispatch cyclenext"))          -- ⌘Tab   → next window
-hl.bind(cmd .. " + SHIFT + Tab", hl.dsp.exec_cmd("hyprctl dispatch cyclenext prev"))     -- ⌘⇧Tab → previous window
-hl.bind(cmd .. " + grave",       hl.dsp.exec_cmd("hyprctl dispatch focuscurrentorlast")) -- ⌘`     → toggle last window
-hl.bind(cmd .. " + H",           hl.dsp.exec_cmd("hyprctl dispatch movetoworkspacesilent special:hidden"))  -- ⌘H  → hide window
-hl.bind(cmd .. " + SHIFT + H",   hl.dsp.exec_cmd("hyprctl dispatch togglespecialworkspace hidden"))         -- ⌘⇧H → peek hidden
+hl.bind(cmd .. " + Tab",         hl.dsp.window.cycle_next())                -- cmd+Tab       -> next window
+hl.bind(cmd .. " + SHIFT + Tab", hl.dsp.window.cycle_next({ prev = true })) -- cmd+shift+Tab -> previous window
+hl.bind(cmd .. " + grave",       hl.dsp.exec_raw("focuscurrentorlast"))     -- cmd+grave     -> toggle last window
+hl.bind(cmd .. " + H",           hl.dsp.window.move({ workspace = "special:hidden", silent = true }))  -- cmd+H       -> hide window
+hl.bind(cmd .. " + SHIFT + H",   hl.dsp.workspace.toggle_special("hidden"))                            -- cmd+shift+H -> peek hidden
 
--- ── Screenshots (⌘⇧ + number, like macOS) ──
-hl.bind(cmd .. " + SHIFT + 3", hl.dsp.exec_cmd("grim " .. home .. "/Pictures/screenshot-$(date +%s).png"))  -- whole screen → file
-hl.bind(cmd .. " + SHIFT + 4", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))                        -- region → annotate
-hl.bind(cmd .. " + SHIFT + 5", hl.dsp.exec_cmd('grim -g "$(slurp)" - | wl-copy'))                            -- region → clipboard
+-- Screenshots (macOS-style, via ~/.local/bin/screenshot)
+-- add CTRL to send to clipboard instead of saving a file, exactly like macOS.
+hl.bind(cmd .. " + SHIFT + 3",        hl.dsp.exec_cmd(home .. "/.local/bin/screenshot full file"))    -- whole screen -> file
+hl.bind(cmd .. " + CTRL + SHIFT + 3", hl.dsp.exec_cmd(home .. "/.local/bin/screenshot full clip"))    -- whole screen -> clipboard
+hl.bind(cmd .. " + SHIFT + 4",        hl.dsp.exec_cmd(home .. "/.local/bin/screenshot region file"))  -- region -> file
+hl.bind(cmd .. " + CTRL + SHIFT + 4", hl.dsp.exec_cmd(home .. "/.local/bin/screenshot region clip"))  -- region -> clipboard
+hl.bind(cmd .. " + SHIFT + 5",        hl.dsp.exec_cmd(home .. "/.local/bin/screenshot menu"))         -- screenshot menu (macOS cmd+shift+5 toolbar)
+hl.bind(cmd .. " + SHIFT + 6",        hl.dsp.exec_cmd(home .. "/.local/bin/screenshot window file"))  -- window -> file (macOS cmd+shift+4 then space)
+hl.bind(cmd .. " + SHIFT + 7",        hl.dsp.exec_cmd(home .. "/.local/bin/screen-ocr"))             -- OCR region text -> clipboard
 
 -- ── Window management: move focus (ALT + arrows / hjkl) ──
 hl.bind(wm .. " + left",  hl.dsp.focus({ direction = "left" }))
@@ -185,14 +193,14 @@ hl.bind(wm .. " + K",     hl.dsp.focus({ direction = "up" }))
 hl.bind(wm .. " + L",     hl.dsp.focus({ direction = "right" }))
 
 -- ── Move windows (ALT + SHIFT + arrows / hjkl) ──
-hl.bind(wm .. " + SHIFT + left",  hl.dsp.exec_cmd("hyprctl dispatch movewindow l"))
-hl.bind(wm .. " + SHIFT + right", hl.dsp.exec_cmd("hyprctl dispatch movewindow r"))
-hl.bind(wm .. " + SHIFT + up",    hl.dsp.exec_cmd("hyprctl dispatch movewindow u"))
-hl.bind(wm .. " + SHIFT + down",  hl.dsp.exec_cmd("hyprctl dispatch movewindow d"))
-hl.bind(wm .. " + SHIFT + H",     hl.dsp.exec_cmd("hyprctl dispatch movewindow l"))
-hl.bind(wm .. " + SHIFT + J",     hl.dsp.exec_cmd("hyprctl dispatch movewindow d"))
-hl.bind(wm .. " + SHIFT + K",     hl.dsp.exec_cmd("hyprctl dispatch movewindow u"))
-hl.bind(wm .. " + SHIFT + L",     hl.dsp.exec_cmd("hyprctl dispatch movewindow r"))
+hl.bind(wm .. " + SHIFT + left",  hl.dsp.window.move({ direction = "l" }))
+hl.bind(wm .. " + SHIFT + right", hl.dsp.window.move({ direction = "r" }))
+hl.bind(wm .. " + SHIFT + up",    hl.dsp.window.move({ direction = "u" }))
+hl.bind(wm .. " + SHIFT + down",  hl.dsp.window.move({ direction = "d" }))
+hl.bind(wm .. " + SHIFT + H",     hl.dsp.window.move({ direction = "l" }))
+hl.bind(wm .. " + SHIFT + J",     hl.dsp.window.move({ direction = "d" }))
+hl.bind(wm .. " + SHIFT + K",     hl.dsp.window.move({ direction = "u" }))
+hl.bind(wm .. " + SHIFT + L",     hl.dsp.window.move({ direction = "r" }))
 
 -- ── Window state (ALT) ──
 hl.bind(wm .. " + F",         hl.dsp.window.fullscreen())               -- Alt+F  → fullscreen
@@ -213,6 +221,11 @@ end
 for i = 1, 5 do
     hl.bind(cmd .. " + " .. i, hl.dsp.focus({ workspace = i }))
 end
+
+-- macOS-style: SUPER + Left/Right hop to the previous/next existing workspace
+-- (e-1/e+1 skip gaps, so they only land on workspaces that actually exist)
+hl.bind(cmd .. " + left",  hl.dsp.focus({ workspace = "e-1" }))
+hl.bind(cmd .. " + right", hl.dsp.focus({ workspace = "e+1" }))
 
 -- ── Scroll + drag (ALT) ──
 hl.bind(wm .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
@@ -238,8 +251,8 @@ hl.bind(cmd .. " + CTRL + Space", hl.dsp.exec_cmd(home .. "/.local/bin/emoji-pic
 hl.bind(wm  .. " + Print",        hl.dsp.exec_cmd(home .. "/.local/bin/screen-record"))  -- Alt+Print → screen recording toggle
 
 -- ── Screenshots (Print key, kept for muscle memory) ──
-hl.bind("Print",         hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
-hl.bind("SHIFT + Print", hl.dsp.exec_cmd("grim " .. home .. "/Pictures/screenshot-$(date +%s).png"))
+hl.bind("Print",         hl.dsp.exec_cmd(home .. "/.local/bin/screenshot region file"))
+hl.bind("SHIFT + Print", hl.dsp.exec_cmd(home .. "/.local/bin/screenshot full file"))
 
 -- ── Media / brightness ──
 hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),      { locked = true })
@@ -252,8 +265,6 @@ hl.bind("XF86MonBrightnessUp",   hl.dsp.exec_cmd("brightnessctl set 5%+"), { rep
 hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%-"), { repeating = true })
 
 -- ---- window rules (re-added; Lua supports class/title matching) -----------
-hl.window_rule({ name = "float-pavucontrol", match = { class = ".*[Pp]avucontrol.*" }, float = true })
-hl.window_rule({ name = "float-nwg-look",    match = { class = ".*nwg-look.*" },       float = true })
 hl.window_rule({ name = "float-dialogs",     match = { title = "^(Open File|Save File)$" }, float = true })
 
 -- ---- layer rules: FROSTED-GLASS BLUR behind bar/launcher/notifications ----

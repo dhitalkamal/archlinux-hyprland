@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "cleanupPeriodDays": 14,
+  "env": {
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "70",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "MAX_MCP_OUTPUT_TOKENS": "20000",
+    "EDITOR": "nvim",
+    "VISUAL": "nvim",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_HEADLESS_LOG_DIR": "/home/kamaldhital/.claude/logs/headless",
+    "CLAUDE_PENDING_DIR": "/home/kamaldhital/.claude/pending",
+    "CLAUDE_ROUTINES_DIR": "/home/kamaldhital/.claude/routines",
+    "CLAUDE_HEADLESS_DIR": "/home/kamaldhital/.claude/headless",
+    "CLAUDE_EVALS_DIR": "/home/kamaldhital/.claude/evals",
+    "CLAUDE_ORCHESTRATION_DIR": "/home/kamaldhital/.claude/orchestration"
+  },
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(uv run *)",
+      "Bash(uv pip *)",
+      "Bash(uv sync *)",
+      "Bash(uv add *)",
+      "Bash(python manage.py *)",
+      "Bash(python3 manage.py *)",
+      "Bash(yarn *)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git branch *)",
+      "Bash(git stash *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "Bash(git worktree *)",
+      "Bash(docker ps *)",
+      "Bash(docker logs *)",
+      "Bash(docker-compose ps)",
+      "Bash(docker-compose logs *)",
+      "Bash(docker-compose up *)",
+      "Bash(docker-compose down *)",
+      "Bash(uv run python manage.py showmigrations *)",
+      "Bash(uv run python manage.py migrate --check)",
+      "Bash(env -u VIRTUAL_ENV uv run --extra dev pre-commit run --all-files)",
+      "Bash(claude -p *)",
+      "Bash(gh pr *)",
+      "Bash(gh issue *)",
+      "Bash(gh run *)",
+      "Bash(gh workflow *)",
+      "Bash(gh api *)",
+      "Bash(jq *)",
+      "Bash(mkdir -p *)",
+      "Bash(ls *)",
+      "Read(package.json)",
+      "Read(pyproject.toml)",
+      "Read(tsconfig.json)",
+      "Read(CLAUDE.md)",
+      "Read(.gitignore)",
+      "Read(README.md)",
+      "Read(.env.example)",
+      "Read(**/.env.example)",
+      "Read(/home/kamaldhital/**)",
+      "Edit(/home/kamaldhital/.claude/logs/**)",
+      "Edit(/home/kamaldhital/.claude/pending/**)",
+      "Edit(/home/kamaldhital/.claude/orchestration/**)",
+      "WebSearch"
+    ],
+    "deny": [
+      "Bash(git reset --hard)",
+      "Bash(git push --force)",
+      "Bash(git push -f)",
+      "Bash(git push --force-with-lease)",
+      "Bash(docker system prune *)",
+      "Read(services_credentials/*)",
+      "Read(**/secrets/**)",
+      "Read(.env*)",
+      "Read(**/.env*)",
+      "Read(**/.ssh/**)",
+      "Read(**/.aws/credentials)",
+      "Read(**/credentials.json)",
+      "Edit(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/hooks/**)",
+      "Edit(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/agents/**)",
+      "Edit(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/CLAUDE.md)",
+      "Edit(/home/kamaldhital/Projects/archlinux-hyprland/claude/.claude/settings.json)",
+      "Edit(/home/kamaldhital/.claude/hooks/**)",
+      "Edit(/home/kamaldhital/.claude/settings.json)",
+      "Edit(/home/kamaldhital/.claude/CLAUDE.md)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(git clone *)",
+      "Bash(uv run python manage.py migrate *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh release create *)",
+      "Bash(pacman *)",
+      "Bash(sudo pacman *)",
+      "Bash(yay *)"
+    ],
+    "defaultMode": "auto"
+  },
+  "model": "sonnet",
+  "enableAllProjectMcpServers": true,
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/detect-exec-mode.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/no-decorative-chars.sh",
+            "timeout": 10,
+            "statusMessage": "Checking for decorative characters..."
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/file-size-guard.sh",
+            "timeout": 10,
+            "statusMessage": "Checking file size..."
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/agent-tooling-guard.sh",
+            "timeout": 10,
+            "statusMessage": "Checking tooling write gate..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-bash-check.sh",
+            "timeout": 10,
+            "statusMessage": "Running pre-bash checks..."
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-push-pull.sh",
+            "timeout": 30,
+            "statusMessage": "Pulling latest before push..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/log-headless-action.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/check-claude-md.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/workflow-enforce.sh",
+            "timeout": 10,
+            "statusMessage": "Enforcing prompt workflow..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/headless-stop-report.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "worktree": {
+    "symlinkDirectories": [
+      ".cache",
+      ".pnpm-store",
+      ".yarn/cache",
+      ".uv-cache",
+      "node_modules"
+    ],
+    "baseRef": "fresh",
+    "bgIsolation": "worktree"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  },
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "remember@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
+  },
+  "language": "english",
+  "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark",
+  "editorMode": "normal",
+  "preferredNotifChannel": "notifications_disabled",
+  "teammateMode": "in-process",
+  "skipAutoPermissionPrompt": true,
+  "useAutoModeDuringPlan": true,
+  "respectGitignoreForContext": true
+}

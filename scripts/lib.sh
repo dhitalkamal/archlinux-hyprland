@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Shared helpers sourced by every scripts/NN-*.sh step. Not meant to be run directly.
 
+# shellcheck disable=SC2034  # used by every script that sources this file
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKUP_DIR="${BACKUP_DIR:-$HOME/.config-backup-$(date +%Y%m%d-%H%M%S)}"
 

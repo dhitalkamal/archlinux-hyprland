@@ -26,6 +26,9 @@ quickshell
 kitty
 kitty-terminfo
 
+# --- File manager (super+E, terminal-based) ---
+yazi
+
 # --- Display manager ---
 sddm
 
@@ -52,6 +55,16 @@ swappy
 wf-recorder
 wl-clipboard
 cliphist
+
+# --- Helper-script deps (screenshot tool, dynamic-workspaces daemon, screen-ocr) ---
+jq
+socat
+tesseract
+tesseract-data-eng
+
+# --- Productivity CLI/TUI ---
+lazydocker
+glow
 
 # --- Media / brightness / power ---
 playerctl

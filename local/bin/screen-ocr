@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# screen-ocr: drag a region and copy its text to the clipboard (macOS Live Text style).
+# needs tesseract; reuses grim/slurp/wl-copy already on the system.
+set -euo pipefail
+
+command -v tesseract >/dev/null 2>&1 || {
+    command -v notify-send >/dev/null 2>&1 && notify-send -t 2500 OCR "tesseract not installed"
+    exit 1
+}
+
+geom="$(slurp)" || exit 0   # esc cancels
+text="$(grim -g "$geom" - | tesseract - - 2>/dev/null || true)"
+
+if [ -n "${text//[[:space:]]/}" ]; then
+    printf '%s' "$text" | wl-copy
+    command -v notify-send >/dev/null 2>&1 && notify-send -t 2000 OCR "text copied to clipboard"
+else
+    command -v notify-send >/dev/null 2>&1 && notify-send -t 2000 OCR "no text found in selection"
+fi

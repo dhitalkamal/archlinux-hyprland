@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-# now-playing line for the lockscreen (prints nothing when idle)
-command -v playerctl >/dev/null 2>&1 || exit 0
-st=$(playerctl status 2>/dev/null)
-[ "$st" = "Playing" ] || [ "$st" = "Paused" ] || exit 0
-np=$(playerctl metadata --format '{{artist}} — {{title}}' 2>/dev/null)
-[ -n "$np" ] || exit 0
-icon="󰎈"; [ "$st" = "Paused" ] && icon="󰏤"
-echo "$icon  ${np:0:48}"
