@@ -9,6 +9,50 @@ This isn't a minimal "here's my hyprland.conf" dotfiles dump — `install.sh`
 installs every package, links every config, and wires up the system-level bits
 (SDDM, keyd, optionally the network stack) that a plain symlink script can't reach.
 
+## Screenshots
+
+Real screenshots from this exact config, not mockups. Every accent color
+on screen (bar, menus, terminal, lock screen) is extracted from the current
+wallpaper by `wall-theme` - change the wallpaper and the whole desktop
+recolors to match.
+
+A themed terminal (kitty) with the floating-island bar over the wallpaper:
+
+![Terminal](assets/screenshots/terminal.png)
+
+App launcher (Cmd+Space) and the Launchpad-style app grid (Alt+A):
+
+![Launcher](assets/screenshots/launcher.png)
+
+![Launchpad app grid](assets/screenshots/launchpad.png)
+
+Dropdown quake terminal (Cmd+Shift+Return):
+
+![Dropdown terminal](assets/screenshots/dropterm.png)
+
+Custom quickshell control center (Cmd+D) - volume and brightness sliders,
+wifi/bluetooth/now-playing, and quick toggles - plus the notification
+center (Alt+N):
+
+![Control center](assets/screenshots/control-center.png)
+
+![Notification center](assets/screenshots/notifications.png)
+
+Settings hub (Alt+I), emoji picker (Cmd+Ctrl+Space), and color picker
+(Alt+Shift+P):
+
+![Settings hub](assets/screenshots/settings-hub.png)
+
+![Emoji picker](assets/screenshots/emoji-picker.png)
+
+![Color picker](assets/screenshots/color-picker.png)
+
+Logout menu (Cmd+Shift+Q) and lock screen (Cmd+Ctrl+Q):
+
+![Logout menu](assets/screenshots/logout.png)
+
+![Lock screen](assets/screenshots/lockscreen.png)
+
 ## Quick start
 
 On a fresh Arch install (with a normal, non-root user that has `sudo`):
